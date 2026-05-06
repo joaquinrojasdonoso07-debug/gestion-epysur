@@ -75,7 +75,7 @@ export default function Creditos() {
       <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', gap: '1rem' }}>
         <div style={{ position: 'relative', flex: 1 }}>
           <Search size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: '#94a3b8' }} />
-          <input type="text" placeholder="Buscar crédito..." style={{...iS, paddingLeft: '40px', marginBottom: 0}} onChange={e => setSearch(e.target.value)} />
+          <input type="text" placeholder="Buscar crédito por nombre de fantasía..." style={{...iS, paddingLeft: '40px', marginBottom: 0}} onChange={e => setSearch(e.target.value)} />
         </div>
         <button onClick={() => {setEditingId(null); setFormData(initialForm); setShowForm(true);}} style={{ ...btn, backgroundColor: '#991b1b', width: 'auto' }}>
           <PlusCircle size={18}/> Nuevo Crédito
@@ -88,7 +88,7 @@ export default function Creditos() {
             <h3 style={{ marginTop: 0, color: '#991b1b', borderBottom: '2px solid #fee2e2', paddingBottom: '10px' }}>
               {editingId ? 'Modificar Crédito' : 'Nuevo Crédito'}
             </h3>
-            <label style={lS}>CLIENTE</label>
+            <label style={lS}>NOMBRE DE FANTASÍA (CLIENTE)</label>
             <select style={iS} value={formData.cliente_id} onChange={e => setFormData({ ...formData, cliente_id: e.target.value })} required>
               <option value="">Seleccionar...</option>
               {clientes.map(c => <option key={c.id} value={c.id}>[{c.id_cliente}] {c.nombre_fantasia}</option>)}
@@ -122,7 +122,7 @@ export default function Creditos() {
               <th style={tH}>ACCIONES</th>
               <th style={tH}>FECHA</th>
               <th style={tH}>ID CLI</th>
-              <th style={tH}>CLIENTE</th>
+              <th style={tH}>NOMBRE DE FANTASÍA</th>
               <th style={tH}>TOTAL</th>
               <th style={tH}>ABONO</th>
               <th style={tH}>SALDO</th>
