@@ -123,47 +123,100 @@ export default function Cartera() {
       <style>{` @media print { .no-print { display: none !important; } table { font-size: 8px !important; width: 100% !important; } } `}</style>
 
       <div className="no-print" style={{marginBottom:'20px'}}>
-        {/* BOTONES ARRIBA */}
         <div style={{display:'flex', gap:'10px', marginBottom:'15px'}}>
           <button onClick={() => {setEditingId(null); setFormData(initialForm); setShowForm(true);}} style={{...btn, backgroundColor:'#059669', flex:1}}> <PlusCircle size={18}/> NUEVO CLIENTE </button>
           <button onClick={() => window.print()} style={{...btn, backgroundColor:'#64748b', width:'60px'}}> <Printer size={18}/> </button>
         </div>
-        {/* BUSCADOR ABAJO */}
         <div style={{position:'relative'}}>
           <Search size={18} style={{position:'absolute', left:'12px', top:'12px', color:'#94a3b8'}} />
-          <input type="text" placeholder="Buscar cliente por cualquier dato..." style={{...iS, paddingLeft:'40px', marginBottom:0}} onChange={e => setSearch(e.target.value)} />
+          <input type="text" placeholder="Buscar cliente..." style={{...iS, paddingLeft:'40px', marginBottom:0}} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
 
       {showForm && (
         <div className="no-print" style={{position:'fixed', inset:0, backgroundColor:'rgba(0,0,0,0.8)', display:'flex', justifyContent:'center', padding:'20px', zIndex:100, overflowY:'auto'}}>
-          <form onSubmit={save} style={{backgroundColor:'white', padding:'2rem', borderRadius:'15px', width:'100%', maxWidth:'450px', alignSelf:'flex-start'}}>
+          <form onSubmit={save} style={{backgroundColor:'white', padding:'2rem', borderRadius:'15px', width:'100%', maxWidth:'700px', alignSelf:'flex-start', boxShadow:'0 20px 40px rgba(0,0,0,0.4)'}}>
             <h3 style={{marginTop:0, color:'#1e40af', borderBottom:'2px solid #f1f5f9', paddingBottom:'10px', textAlign:'center'}}>FICHA DE CLIENTE</h3>
-            <label style={lS}>NOMBRE DE FANTASÍA *</label><input type="text" style={iS} value={formData.nombre_fantasia} onChange={e=>setFormData({...formData, nombre_fantasia: e.target.value})} required />
-            <label style={lS}>NOMBRE REAL *</label><input type="text" style={iS} value={formData.nombre_cliente} onChange={e=>setFormData({...formData, nombre_cliente: e.target.value})} required />
-            <label style={lS}>RUT</label><input type="text" style={iS} value={formData.rut} onChange={e=>setFormData({...formData, rut: formatRut(e.target.value)})} placeholder="12.345.678-9" />
-            <label style={lS}>TELÉFONO</label><input type="text" style={iS} value={formData.telefono} onChange={e=>setFormData({...formData, telefono: formatPhone(e.target.value)})} />
-            <label style={lS}>ÚLT. CONTACTO</label><input type="date" style={iS} value={formData.ultimo_contacto || ''} onChange={e=>setFormData({...formData, ultimo_contacto: e.target.value})} />
-            <label style={lS}>PRÓX. CONTACTO</label><input type="date" style={iS} min={hoy} value={formData.proximo_contacto || ''} onChange={e=>setFormData({...formData, proximo_contacto: e.target.value})} />
-            <label style={lS}>OBSERVACIONES</label><textarea style={{...iS, height:'80px'}} value={formData.observaciones} onChange={e=>setFormData({...formData, observaciones: e.target.value})} />
-            <div style={{display:'flex', gap:'10px'}}>
+            
+            <div style={{marginTop:'20px'}}>
+              <h4 style={sectionTitle}>Identificación</h4>
+              <label style={lS}>Nombre de Fantasía *</label>
+              <input type="text" style={iS} value={formData.nombre_fantasia} onChange={e=>setFormData({...formData, nombre_fantasia: e.target.value})} required />
+              
+              <label style={lS}>Razón Social *</label>
+              <input type="text" style={iS} value={formData.nombre_cliente} onChange={e=>setFormData({...formData, nombre_cliente: e.target.value})} required />
+              
+              <label style={lS}>RUT</label>
+              <input type="text" style={iS} value={formData.rut} onChange={e=>setFormData({...formData, rut: formatRut(e.target.value)})} placeholder="12.345.678-9" />
+              
+              <h4 style={sectionTitle}>Contacto</h4>
+              <label style={lS}>Teléfono</label>
+              <input type="text" style={iS} value={formData.telefono} onChange={e=>setFormData({...formData, telefono: formatPhone(e.target.value)})} />
+              
+              <div style={{display:'flex', alignItems:'center', gap:'10px', marginBottom:'15px', background:'#f0fdf4', padding:'10px', borderRadius:'8px'}}>
+                <input type="checkbox" id="ws" checked={formData.whatsapp} onChange={e=>setFormData({...formData, whatsapp: e.target.checked})} style={{width:'18px', height:'18px'}} />
+                <label htmlFor="ws" style={{fontWeight:'bold', color:'#166534', fontSize:'0.9rem'}}>¿Tiene WhatsApp?</label>
+              </div>
+
+              <label style={lS}>Correo Electrónico</label>
+              <input type="email" style={iS} value={formData.correo} onChange={e=>setFormData({...formData, correo: e.target.value})} />
+
+              <h4 style={sectionTitle}>Ubicación</h4>
+              <label style={lS}>Dirección</label>
+              <input type="text" style={iS} value={formData.direccion} onChange={e=>setFormData({...formData, direccion: e.target.value})} />
+              <label style={lS}>Comuna</label>
+              <input type="text" style={iS} value={formData.comuna} onChange={e=>setFormData({...formData, comuna: e.target.value})} />
+              <label style={lS}>Región</label>
+              <input type="text" style={iS} value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} />
+
+              <h4 style={sectionTitle}>Gestión</h4>
+              <label style={lS}>Vendedor / Responsable</label>
+              <input type="text" style={iS} value={formData.responsable} onChange={e=>setFormData({...formData, responsable: e.target.value})} />
+              <label style={lS}>Último Contacto</label>
+              <input type="date" style={iS} value={formData.ultimo_contacto || ''} onChange={e=>setFormData({...formData, ultimo_contacto: e.target.value})} />
+              <label style={lS}>Próxima Llamada</label>
+              <input type="date" style={iS} min={hoy} value={formData.proximo_contacto || ''} onChange={e=>setFormData({...formData, proximo_contacto: e.target.value})} />
+            </div>
+
+            <h4 style={sectionTitle}>Productos</h4>
+            <div style={{background:'#f8fafc', padding:'20px', borderRadius:'10px', border:'1px solid #e2e8f0', marginBottom:'20px'}}>
+              {tempProducts.map((p, idx) => (
+                <div key={idx} style={{marginBottom:'15px', borderBottom:'1px solid #e2e8f0', paddingBottom:'15px'}}>
+                  <div style={{display:'flex', gap:'10px', marginBottom:'8px'}}>
+                    <input type="text" placeholder="Producto" style={{...iS, marginBottom:0}} value={p.nombre} onChange={e=>{let n=[...tempProducts]; n[idx].nombre=e.target.value; setTempProducts(n);}} />
+                    {tempProducts.length > 1 && <button type="button" onClick={()=>setTempProducts(tempProducts.filter((_,i)=>i!==idx))} style={{color:'#ef4444', border:'none', background:'none'}}><Trash2 size={20}/></button>}
+                  </div>
+                  <input type="number" placeholder="Precio $" style={{...iS, marginBottom:0}} value={p.precio} onChange={e=>{let n=[...tempProducts]; n[idx].precio=e.target.value; setTempProducts(n);}} />
+                </div>
+              ))}
+              <button type="button" onClick={() => setTempProducts([...tempProducts, {nombre:'', precio:0}])} style={{...btn, backgroundColor:'#1e40af', padding:'8px 15px', fontSize:'0.8rem', width:'auto'}}>+ Añadir Producto</button>
+              <div style={{textAlign:'right', fontWeight:'bold', color:'#1e40af', fontSize:'1.2rem', marginTop:'15px'}}> Total: ${tempProducts.reduce((sum, p) => sum + Number(p.precio), 0).toLocaleString('es-CL')} </div>
+            </div>
+
+            <label style={lS}>Observaciones</label>
+            <textarea style={{...iS, height:'120px'}} value={formData.observaciones} onChange={e=>setFormData({...formData, observaciones: e.target.value})} />
+
+            <div style={{display:'flex', gap:'15px', marginTop:'30px'}}>
               <button type="submit" style={{...btn, backgroundColor:'#1e40af', flex:1}}>GUARDAR</button>
-              <button type="button" onClick={()=>setShowForm(false)} style={{...btn, backgroundColor:'#64748b', flex:1}}>CANCELAR</button>
+              <button type="button" onClick={()=>{setShowForm(false); setEditingId(null);}} style={{...btn, backgroundColor:'#64748b', flex:1}}>CANCELAR</button>
             </div>
           </form>
         </div>
       )}
 
-      <div style={{overflowX:'auto', backgroundColor:'white', borderRadius:'12px'}}>
-        <table style={{width:'100%', borderCollapse:'collapse', fontSize:'0.65rem', minWidth:'2000px'}}>
+      <div style={{overflowX:'auto', backgroundColor:'white', borderRadius:'12px', boxShadow:'0 4px 12px rgba(0,0,0,0.1)'}}>
+        <table style={{width:'100%', borderCollapse:'collapse', fontSize:'0.65rem', minWidth:'2500px'}}>
           <thead>
             <tr style={{backgroundColor:'#1e40af', color:'white'}}>
               <th className="no-print" style={tH}>ACCIONES</th>
               <th style={tH}>ID</th>
-              <th style={tH}>NOMBRE DE FANTASÍA</th>
-              <th style={tH}>PRODUCTOS</th>
-              <th style={tH}>VALOR TOTAL</th>
+              <th style={tH}>NOMBRE FANTASÍA</th>
+              <th style={tH}>RAZÓN SOCIAL</th>
+              <th style={tH}>RUT</th>
               <th style={tH}>TELÉFONO</th>
+              <th style={tH}>UBICACIÓN</th>
+              <th style={tH}>PRODUCTOS</th>
+              <th style={tH}>TOTAL</th>
               <th style={tH}>ÚLT. CONTACTO</th>
               <th style={tH}>PRÓX. CONTACTO</th>
               <th style={tH}>OBSERVACIONES</th>
@@ -177,10 +230,15 @@ export default function Cartera() {
                   <button onClick={()=>deleteCliente(c.id, c.nombre_fantasia)} style={{...smBtn, backgroundColor:'#ef4444'}}><Trash2 size={14} color="white"/></button>
                 </td>
                 <td style={tD}>{c.id_cliente || c.id}</td>
-                <td style={{...tD, fontWeight:'bold'}}>{c.nombre_fantasia}</td>
-                <td style={{...tD, whiteSpace:'normal', maxWidth:'300px'}}>{c.productos_ofrecidos?.split(' | ').map((p, i) => <div key={i}>• {p}</div>)}</td>
+                <td style={{...tD, fontWeight:'bold', color:'#1e40af'}}>{c.nombre_fantasia}</td>
+                <td style={tD}>{c.nombre_cliente}</td>
+                <td style={tD}>{c.rut}</td>
+                <td style={tD}>{c.telefono} {c.whatsapp && '✅'}</td>
+                <td style={tD}>{c.comuna} / {c.region}</td>
+                <td style={{...tD, whiteSpace:'normal', maxWidth:'400px', color:'#475569'}}>
+                  {c.productos_ofrecidos?.split(' | ').map((p, i) => <div key={i}>• {p}</div>)}
+                </td>
                 <td style={{...tD, fontWeight:'bold'}}>${Number(c.ultimo_valor).toLocaleString('es-CL')}</td>
-                <td style={tD}>{c.telefono}</td>
                 <td style={tD}>{formatFechaChile(c.ultimo_contacto)}</td>
                 <td style={{...tD, color:'#e11d48', fontWeight:'bold'}}>{formatFechaChile(c.proximo_contacto)}</td>
                 <td style={{...tD, whiteSpace:'normal', maxWidth:'300px'}}>{c.observaciones}</td>
@@ -192,9 +250,11 @@ export default function Cartera() {
     </div>
   );
 }
-const iS = { width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'8px', boxSizing:'border-box', fontSize:'0.9rem', marginBottom:'12px' };
-const btn = { padding:'12px', color:'white', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', display:'flex', alignItems:'center', gap:'8px', justifyContent:'center' };
+
+const iS = { width:'100%', padding:'12px', border:'1px solid #cbd5e1', borderRadius:'8px', boxSizing:'border-box', fontSize:'1rem', marginBottom:'15px' };
+const btn = { padding:'15px', color:'white', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', display:'flex', alignItems:'center', gap:'10px', justifyContent:'center' };
 const smBtn = { padding:'6px', border:'none', borderRadius:'4px', cursor:'pointer' };
 const tH = { padding:'15px 10px', textAlign:'left', whiteSpace:'nowrap' };
 const tD = { padding:'12px 10px', whiteSpace:'nowrap' };
-const lS = { fontSize:'0.7rem', fontWeight:'bold', color:'#475569', display:'block', marginBottom:'4px' };
+const lS = { fontSize:'0.8rem', fontWeight:'bold', color:'#475569', display:'block', marginBottom:'6px', textTransform:'uppercase' };
+const sectionTitle = { borderLeft:'4px solid #1e40af', paddingLeft:'10px', color:'#1e40af', marginTop:'25px', marginBottom:'15px', fontSize:'1.1rem' };
