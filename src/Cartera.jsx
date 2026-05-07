@@ -26,23 +26,6 @@ export default function Cartera() {
 
   const hoy = new Date().toISOString().split('T')[0];
 
-  const validarRutChileno = (rut) => {
-    if (!rut) return true;
-    const limpio = rut.replace(/\./g, '').replace('-', '').toUpperCase();
-    if (limpio.length < 8) return false;
-    const cuerpo = limpio.slice(0, -1);
-    let dv = limpio.slice(-1);
-    let suma = 0; let multiplo = 2;
-    for (let i = 1; i <= cuerpo.length; i++) {
-      suma = suma + (multiplo * limpio.charAt(cuerpo.length - i));
-      if (multiplo < 7) multiplo++; else multiplo = 2;
-    }
-    let dvEsperado = 11 - (suma % 11);
-    dv = (dv === 'K') ? 10 : parseInt(dv);
-    dvEsperado = (dvEsperado === 11) ? 0 : (dvEsperado === 10) ? 10 : dvEsperado;
-    return dv === dvEsperado;
-  };
-
   const formatFechaChile = (f) => {
     if (!f) return '';
     const [y, m, d] = f.split('-');
@@ -96,9 +79,6 @@ export default function Cartera() {
 
   const save = async (e) => {
     e.preventDefault();
-    if (formData.rut && !validarRutChileno(formData.rut)) {
-      alert("RUT inválido."); return;
-    }
     const totalValue = tempProducts.reduce((sum, p) => sum + Number(p.precio), 0);
     const productString = tempProducts
       .filter(p => p.nombre && p.nombre.trim() !== '')
@@ -142,22 +122,18 @@ export default function Cartera() {
               <h4 style={sectionTitle}>Identificación</h4>
               <label style={lS}>Nombre de Fantasía *</label>
               <input type="text" style={iS} value={formData.nombre_fantasia} onChange={e=>setFormData({...formData, nombre_fantasia: e.target.value})} required />
-              
               <label style={lS}>Razón Social *</label>
               <input type="text" style={iS} value={formData.nombre_cliente} onChange={e=>setFormData({...formData, nombre_cliente: e.target.value})} required />
-              
               <label style={lS}>RUT</label>
               <input type="text" style={iS} value={formData.rut} onChange={e=>setFormData({...formData, rut: formatRut(e.target.value)})} placeholder="12.345.678-9" />
               
               <h4 style={sectionTitle}>Contacto</h4>
               <label style={lS}>Teléfono</label>
               <input type="text" style={iS} value={formData.telefono} onChange={e=>setFormData({...formData, telefono: formatPhone(e.target.value)})} />
-              
               <div style={{display:'flex', alignItems:'center', gap:'10px', marginBottom:'15px', background:'#f0fdf4', padding:'10px', borderRadius:'8px'}}>
                 <input type="checkbox" id="ws" checked={formData.whatsapp} onChange={e=>setFormData({...formData, whatsapp: e.target.checked})} style={{width:'18px', height:'18px'}} />
                 <label htmlFor="ws" style={{fontWeight:'bold', color:'#166534', fontSize:'0.9rem'}}>¿Tiene WhatsApp?</label>
               </div>
-
               <label style={lS}>Correo Electrónico</label>
               <input type="email" style={iS} value={formData.correo} onChange={e=>setFormData({...formData, correo: e.target.value})} />
 
@@ -204,8 +180,8 @@ export default function Cartera() {
         </div>
       )}
 
-      <div style={{overflowX:'auto', backgroundColor:'white', borderRadius:'12px', boxShadow:'0 4px 12px rgba(0,0,0,0.1)'}}>
-        <table style={{width:'100%', borderCollapse:'collapse', fontSize:'0.65rem', minWidth:'2500px'}}>
+      <div style={{overflowX:'auto', backgroundColor:'white', borderRadius:'12px'}}>
+        <table style={{width:'100%', borderCollapse:'collapse', fontSize:'0.65rem', minWidth:'2800px'}}>
           <thead>
             <tr style={{backgroundColor:'#1e40af', color:'white'}}>
               <th className="no-print" style={tH}>ACCIONES</th>
@@ -214,7 +190,8 @@ export default function Cartera() {
               <th style={tH}>RAZÓN SOCIAL</th>
               <th style={tH}>RUT</th>
               <th style={tH}>TELÉFONO</th>
-              <th style={tH}>UBICACIÓN</th>
+              <th style={tH}>DIRECCIÓN</th>
+              <th style={tH}>UBICACIÓN (COM/REG)</th>
               <th style={tH}>PRODUCTOS</th>
               <th style={tH}>TOTAL</th>
               <th style={tH}>ÚLT. CONTACTO</th>
@@ -234,8 +211,9 @@ export default function Cartera() {
                 <td style={tD}>{c.nombre_cliente}</td>
                 <td style={tD}>{c.rut}</td>
                 <td style={tD}>{c.telefono} {c.whatsapp && '✅'}</td>
+                <td style={tD}>{c.direccion}</td>
                 <td style={tD}>{c.comuna} / {c.region}</td>
-                <td style={{...tD, whiteSpace:'normal', maxWidth:'400px', color:'#475569'}}>
+                <td style={{...tD, whiteSpace:'normal', maxWidth:'400px'}}>
                   {c.productos_ofrecidos?.split(' | ').map((p, i) => <div key={i}>• {p}</div>)}
                 </td>
                 <td style={{...tD, fontWeight:'bold'}}>${Number(c.ultimo_valor).toLocaleString('es-CL')}</td>
