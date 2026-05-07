@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Users, PlusCircle, Save, X, Edit3, Search, Printer, Trash2, AlertTriangle } from 'lucide-react';
+import { Users, PlusCircle, Save, X, Edit3, Search, Printer, Trash2 } from 'lucide-react';
 
 export default function Cartera() {
   const [data, setData] = useState([]);
@@ -59,14 +59,12 @@ export default function Cartera() {
 
   const formatPhone = (v) => {
     let c = v.replace(/\D/g, '');
-    // Caso con +56
     if (c.startsWith('56')) {
         let rest = c.slice(2);
         if (rest.length <= 1) return `+56 ${rest}`;
         if (rest.length <= 5) return `+56 ${rest.slice(0,1)} ${rest.slice(1)}`;
         return `+56 ${rest.slice(0,1)} ${rest.slice(1,5)} ${rest.slice(5,9)}`;
     } 
-    // Caso sin +56 (empezando con 9)
     if (c.startsWith('9') || c.length > 0) {
         if (c.length <= 4) return c;
         return `${c.slice(0,1)} ${c.slice(1,5)} ${c.slice(5,9)}`;
@@ -98,11 +96,9 @@ export default function Cartera() {
 
   const save = async (e) => {
     e.preventDefault();
-
     if (formData.rut && !validarRutChileno(formData.rut)) {
       alert("RUT inválido."); return;
     }
-
     const totalValue = tempProducts.reduce((sum, p) => sum + Number(p.precio), 0);
     const productString = tempProducts
       .filter(p => p.nombre && p.nombre.trim() !== '')
@@ -111,7 +107,6 @@ export default function Cartera() {
 
     const cleanData = { ...formData };
     Object.keys(cleanData).forEach(key => { if (cleanData[key] === '') cleanData[key] = null; });
-
     const finalData = { ...cleanData, productos_ofrecidos: productString || null, ultimo_valor: totalValue || 0 };
 
     try {
@@ -125,43 +120,32 @@ export default function Cartera() {
 
   return (
     <div>
-      <style>{` @media print { .no-print { display: none !important; } table { font-size: 8px !important; width: 100% !important; } th, td { border: 1px solid #eee !important; padding: 4px !important; } } `}</style>
+      <style>{` @media print { .no-print { display: none !important; } table { font-size: 8px !important; width: 100% !important; } } `}</style>
 
-      <div className="no-print" style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
-        <input type="text" placeholder="Buscar cliente..." style={{...iS, flex:1, marginBottom:0}} onChange={e => setSearch(e.target.value)} />
-        <button onClick={() => window.print()} style={{...btn, backgroundColor:'#64748b', width:'50px'}}> <Printer size={18}/> </button>
-        <button onClick={() => {setEditingId(null); setFormData(initialForm); setShowForm(true);}} style={{...btn, backgroundColor:'#059669', width:'auto', padding:'0 20px'}}> <PlusCircle size={18}/> Nuevo Cliente </button>
+      <div className="no-print" style={{marginBottom:'20px'}}>
+        {/* BOTONES ARRIBA */}
+        <div style={{display:'flex', gap:'10px', marginBottom:'15px'}}>
+          <button onClick={() => {setEditingId(null); setFormData(initialForm); setShowForm(true);}} style={{...btn, backgroundColor:'#059669', flex:1}}> <PlusCircle size={18}/> NUEVO CLIENTE </button>
+          <button onClick={() => window.print()} style={{...btn, backgroundColor:'#64748b', width:'60px'}}> <Printer size={18}/> </button>
+        </div>
+        {/* BUSCADOR ABAJO */}
+        <div style={{position:'relative'}}>
+          <Search size={18} style={{position:'absolute', left:'12px', top:'12px', color:'#94a3b8'}} />
+          <input type="text" placeholder="Buscar cliente por cualquier dato..." style={{...iS, paddingLeft:'40px', marginBottom:0}} onChange={e => setSearch(e.target.value)} />
+        </div>
       </div>
 
       {showForm && (
         <div className="no-print" style={{position:'fixed', inset:0, backgroundColor:'rgba(0,0,0,0.8)', display:'flex', justifyContent:'center', padding:'20px', zIndex:100, overflowY:'auto'}}>
           <form onSubmit={save} style={{backgroundColor:'white', padding:'2rem', borderRadius:'15px', width:'100%', maxWidth:'450px', alignSelf:'flex-start'}}>
             <h3 style={{marginTop:0, color:'#1e40af', borderBottom:'2px solid #f1f5f9', paddingBottom:'10px', textAlign:'center'}}>FICHA DE CLIENTE</h3>
-            
-            <label style={lS}>NOMBRE DE FANTASÍA *</label>
-            <input type="text" style={iS} value={formData.nombre_fantasia} onChange={e=>setFormData({...formData, nombre_fantasia: e.target.value})} required />
-            
-            <label style={lS}>NOMBRE REAL *</label>
-            <input type="text" style={iS} value={formData.nombre_cliente} onChange={e=>setFormData({...formData, nombre_cliente: e.target.value})} required />
-            
-            <label style={lS}>RUT</label>
-            <input type="text" style={iS} value={formData.rut} onChange={e=>setFormData({...formData, rut: formatRut(e.target.value)})} placeholder="12.345.678-9" />
-            
-            <label style={lS}>TELÉFONO</label>
-            <input type="text" style={iS} value={formData.telefono} onChange={e=>setFormData({...formData, telefono: formatPhone(e.target.value)})} placeholder="+56 9 1234 5678 o 9 1234 5678" />
-
-            <label style={lS}>CORREO ELECTRÓNICO</label>
-            <input type="email" style={iS} value={formData.correo} onChange={e=>setFormData({...formData, correo: e.target.value})} />
-            
-            <label style={lS}>ÚLT. CONTACTO</label>
-            <input type="date" style={iS} value={formData.ultimo_contacto || ''} onChange={e=>setFormData({...formData, ultimo_contacto: e.target.value})} />
-            
-            <label style={lS}>PRÓX. CONTACTO</label>
-            <input type="date" style={iS} min={hoy} value={formData.proximo_contacto || ''} onChange={e=>setFormData({...formData, proximo_contacto: e.target.value})} />
-            
-            <label style={lS}>OBSERVACIONES</label>
-            <textarea style={{...iS, height:'80px'}} value={formData.observaciones} onChange={e=>setFormData({...formData, observaciones: e.target.value})} />
-            
+            <label style={lS}>NOMBRE DE FANTASÍA *</label><input type="text" style={iS} value={formData.nombre_fantasia} onChange={e=>setFormData({...formData, nombre_fantasia: e.target.value})} required />
+            <label style={lS}>NOMBRE REAL *</label><input type="text" style={iS} value={formData.nombre_cliente} onChange={e=>setFormData({...formData, nombre_cliente: e.target.value})} required />
+            <label style={lS}>RUT</label><input type="text" style={iS} value={formData.rut} onChange={e=>setFormData({...formData, rut: formatRut(e.target.value)})} placeholder="12.345.678-9" />
+            <label style={lS}>TELÉFONO</label><input type="text" style={iS} value={formData.telefono} onChange={e=>setFormData({...formData, telefono: formatPhone(e.target.value)})} />
+            <label style={lS}>ÚLT. CONTACTO</label><input type="date" style={iS} value={formData.ultimo_contacto || ''} onChange={e=>setFormData({...formData, ultimo_contacto: e.target.value})} />
+            <label style={lS}>PRÓX. CONTACTO</label><input type="date" style={iS} min={hoy} value={formData.proximo_contacto || ''} onChange={e=>setFormData({...formData, proximo_contacto: e.target.value})} />
+            <label style={lS}>OBSERVACIONES</label><textarea style={{...iS, height:'80px'}} value={formData.observaciones} onChange={e=>setFormData({...formData, observaciones: e.target.value})} />
             <div style={{display:'flex', gap:'10px'}}>
               <button type="submit" style={{...btn, backgroundColor:'#1e40af', flex:1}}>GUARDAR</button>
               <button type="button" onClick={()=>setShowForm(false)} style={{...btn, backgroundColor:'#64748b', flex:1}}>CANCELAR</button>
@@ -208,10 +192,9 @@ export default function Cartera() {
     </div>
   );
 }
-
 const iS = { width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'8px', boxSizing:'border-box', fontSize:'0.9rem', marginBottom:'12px' };
 const btn = { padding:'12px', color:'white', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', display:'flex', alignItems:'center', gap:'8px', justifyContent:'center' };
 const smBtn = { padding:'6px', border:'none', borderRadius:'4px', cursor:'pointer' };
 const tH = { padding:'15px 10px', textAlign:'left', whiteSpace:'nowrap' };
 const tD = { padding:'12px 10px', whiteSpace:'nowrap' };
-const lS = { fontSize:'0.7rem', fontWeight:'bold', color:'#475569', display:'block', marginBottom:'4px', textTransform:'uppercase' };
+const lS = { fontSize:'0.7rem', fontWeight:'bold', color:'#475569', display:'block', marginBottom:'4px' };

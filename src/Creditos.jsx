@@ -65,12 +65,17 @@ export default function Creditos() {
 
   return (
     <div>
-      <style>{` @media print { .no-print { display: none !important; } table { width: 100% !important; font-size: 10px !important; } th, td { border: 1px solid #eee !important; } } `}</style>
-
-      <div className="no-print" style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-        <input type="text" placeholder="Buscar..." style={{...iS, flex:1, marginBottom:0}} onChange={e => setSearch(e.target.value)} />
-        <button onClick={() => window.print()} style={btnGray}> <Printer size={18}/> </button>
-        <button onClick={() => {setEditingId(null); setShowForm(true);}} style={btnRed}> <PlusCircle size={18}/> Nueva </button>
+      <div className="no-print" style={{ marginBottom: '20px' }}>
+        {/* BOTONES ARRIBA */}
+        <div style={{display:'flex', gap:'10px', marginBottom:'15px'}}>
+          <button onClick={() => {setEditingId(null); setShowForm(true);}} style={{...btnRed, flex:1}}> <PlusCircle size={18}/> NUEVA DEUDA </button>
+          <button onClick={() => window.print()} style={{...btnGray, width:'60px'}}> <Printer size={18}/> </button>
+        </div>
+        {/* BUSCADOR ABAJO */}
+        <div style={{position:'relative'}}>
+          <Search size={18} style={{position:'absolute', left:'12px', top:'12px', color:'#94a3b8'}} />
+          <input type="text" placeholder="Buscar por cliente o estado..." style={{...iS, paddingLeft:'40px', marginBottom:0}} onChange={e => setSearch(e.target.value)} />
+        </div>
       </div>
 
       {showForm && (
