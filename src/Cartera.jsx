@@ -64,9 +64,7 @@ export default function Cartera() {
         return { nombre: n.replace('• ', ''), precio: v ? parseInt(v.replace(')', '').replace(/\./g, '')) : 0 };
       });
       setTempProducts(prods);
-    } else {
-      setTempProducts([{ nombre: '', precio: 0 }]);
-    }
+    } else { setTempProducts([{ nombre: '', precio: 0 }]); }
     setShowForm(true);
   };
 
@@ -100,11 +98,19 @@ export default function Cartera() {
 
   return (
     <div>
-      <style>{` @media print { .no-print { display: none !important; } table { font-size: 8px !important; width: 100% !important; } } `}</style>
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { background: white !important; }
+          table { width: 100% !important; font-size: 7pt !important; border-collapse: collapse !important; table-layout: fixed !important; }
+          th, td { border: 1px solid #ccc !important; padding: 3px !important; word-wrap: break-word !important; }
+          @page { size: landscape; margin: 0.5cm; }
+        }
+      `}</style>
 
       <div className="no-print" style={{marginBottom:'20px'}}>
         <div style={{display:'flex', gap:'10px', marginBottom:'15px'}}>
-          <button onClick={() => {setEditingId(null); setFormData(initialForm); setShowForm(true);}} style={{...btn, backgroundColor:'#059669', flex:1}}> <PlusCircle size={18}/> NUEVO CLIENTE </button>
+          <button onClick={() => {setEditingId(null); setFormData(initialForm); setTempProducts([{nombre:'', precio:0}]); setShowForm(true);}} style={{...btn, backgroundColor:'#059669', flex:1}}> <PlusCircle size={18}/> NUEVO CLIENTE </button>
           <button onClick={() => window.print()} style={{...btn, backgroundColor:'#64748b', width:'60px'}}> <Printer size={18}/> </button>
         </div>
         <div style={{position:'relative'}}>
@@ -116,7 +122,7 @@ export default function Cartera() {
       {showForm && (
         <div className="no-print" style={{position:'fixed', inset:0, backgroundColor:'rgba(0,0,0,0.8)', display:'flex', justifyContent:'center', padding:'20px', zIndex:100, overflowY:'auto'}}>
           <form onSubmit={save} style={{backgroundColor:'white', padding:'2rem', borderRadius:'15px', width:'100%', maxWidth:'700px', alignSelf:'flex-start', boxShadow:'0 20px 40px rgba(0,0,0,0.4)'}}>
-            <h3 style={{marginTop:0, color:'#1e40af', borderBottom:'2px solid #f1f5f9', paddingBottom:'10px', textAlign:'center'}}>FICHA DE CLIENTE</h3>
+            <h3 style={{marginTop:0, color:'#1e40af', borderBottom:'2px solid #f1f5f9', paddingBottom:'10px', textAlign:'center'}}>FICHA TÉCNICA DE CLIENTE</h3>
             
             <div style={{marginTop:'20px'}}>
               <h4 style={sectionTitle}>Identificación</h4>
@@ -145,56 +151,54 @@ export default function Cartera() {
               <label style={lS}>Región</label>
               <input type="text" style={iS} value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} />
 
-              <h4 style={sectionTitle}>Gestión</h4>
-              <label style={lS}>Vendedor / Responsable</label>
+              <h4 style={sectionTitle}>Gestión Comercial</h4>
+              <label style={lS}>Responsable / Vendedor</label>
               <input type="text" style={iS} value={formData.responsable} onChange={e=>setFormData({...formData, responsable: e.target.value})} />
-              <label style={lS}>Último Contacto</label>
+              <label style={lS}>Fecha Último Contacto</label>
               <input type="date" style={iS} value={formData.ultimo_contacto || ''} onChange={e=>setFormData({...formData, ultimo_contacto: e.target.value})} />
-              <label style={lS}>Próxima Llamada</label>
+              <label style={lS}>Fecha Próxima Llamada</label>
               <input type="date" style={iS} min={hoy} value={formData.proximo_contacto || ''} onChange={e=>setFormData({...formData, proximo_contacto: e.target.value})} />
             </div>
 
-            <h4 style={sectionTitle}>Productos</h4>
+            <h4 style={sectionTitle}>Productos y Precios</h4>
             <div style={{background:'#f8fafc', padding:'20px', borderRadius:'10px', border:'1px solid #e2e8f0', marginBottom:'20px'}}>
               {tempProducts.map((p, idx) => (
                 <div key={idx} style={{marginBottom:'15px', borderBottom:'1px solid #e2e8f0', paddingBottom:'15px'}}>
                   <div style={{display:'flex', gap:'10px', marginBottom:'8px'}}>
                     <input type="text" placeholder="Producto" style={{...iS, marginBottom:0}} value={p.nombre} onChange={e=>{let n=[...tempProducts]; n[idx].nombre=e.target.value; setTempProducts(n);}} />
-                    {tempProducts.length > 1 && <button type="button" onClick={()=>setTempProducts(tempProducts.filter((_,i)=>i!==idx))} style={{color:'#ef4444', border:'none', background:'none'}}><Trash2 size={20}/></button>}
+                    {tempProducts.length > 1 && <button type="button" onClick={()=>setTempProducts(tempProducts.filter((_,i)=>i!==idx))} style={{color:'#ef4444', border:'none', background:'none', cursor:'pointer'}}><Trash2 size={20}/></button>}
                   </div>
                   <input type="number" placeholder="Precio $" style={{...iS, marginBottom:0}} value={p.precio} onChange={e=>{let n=[...tempProducts]; n[idx].precio=e.target.value; setTempProducts(n);}} />
                 </div>
               ))}
               <button type="button" onClick={() => setTempProducts([...tempProducts, {nombre:'', precio:0}])} style={{...btn, backgroundColor:'#1e40af', padding:'8px 15px', fontSize:'0.8rem', width:'auto'}}>+ Añadir Producto</button>
-              <div style={{textAlign:'right', fontWeight:'bold', color:'#1e40af', fontSize:'1.2rem', marginTop:'15px'}}> Total: ${tempProducts.reduce((sum, p) => sum + Number(p.precio), 0).toLocaleString('es-CL')} </div>
             </div>
 
             <label style={lS}>Observaciones</label>
             <textarea style={{...iS, height:'120px'}} value={formData.observaciones} onChange={e=>setFormData({...formData, observaciones: e.target.value})} />
 
             <div style={{display:'flex', gap:'15px', marginTop:'30px'}}>
-              <button type="submit" style={{...btn, backgroundColor:'#1e40af', flex:1}}>GUARDAR</button>
+              <button type="submit" style={{...btn, backgroundColor:'#1e40af', flex:1}}>GUARDAR TODO</button>
               <button type="button" onClick={()=>{setShowForm(false); setEditingId(null);}} style={{...btn, backgroundColor:'#64748b', flex:1}}>CANCELAR</button>
             </div>
           </form>
         </div>
       )}
 
-      <div style={{overflowX:'auto', backgroundColor:'white', borderRadius:'12px'}}>
+      <div style={{overflowX:'auto', backgroundColor:'white', borderRadius:'12px', boxShadow:'0 4px 12px rgba(0,0,0,0.1)'}}>
         <table style={{width:'100%', borderCollapse:'collapse', fontSize:'0.65rem', minWidth:'2800px'}}>
           <thead>
             <tr style={{backgroundColor:'#1e40af', color:'white'}}>
               <th className="no-print" style={tH}>ACCIONES</th>
               <th style={tH}>ID</th>
-              <th style={tH}>NOMBRE FANTASÍA</th>
+              <th style={tH}>FANTASÍA</th>
               <th style={tH}>RAZÓN SOCIAL</th>
               <th style={tH}>RUT</th>
               <th style={tH}>TELÉFONO</th>
               <th style={tH}>DIRECCIÓN</th>
-              <th style={tH}>UBICACIÓN (COM/REG)</th>
+              <th style={tH}>UBICACIÓN</th>
               <th style={tH}>PRODUCTOS</th>
               <th style={tH}>TOTAL</th>
-              <th style={tH}>ÚLT. CONTACTO</th>
               <th style={tH}>PRÓX. CONTACTO</th>
               <th style={tH}>OBSERVACIONES</th>
             </tr>
@@ -213,11 +217,10 @@ export default function Cartera() {
                 <td style={tD}>{c.telefono} {c.whatsapp && '✅'}</td>
                 <td style={tD}>{c.direccion}</td>
                 <td style={tD}>{c.comuna} / {c.region}</td>
-                <td style={{...tD, whiteSpace:'normal', maxWidth:'400px'}}>
+                <td style={{...tD, whiteSpace:'normal', maxWidth:'400px', color:'#475569'}}>
                   {c.productos_ofrecidos?.split(' | ').map((p, i) => <div key={i}>• {p}</div>)}
                 </td>
                 <td style={{...tD, fontWeight:'bold'}}>${Number(c.ultimo_valor).toLocaleString('es-CL')}</td>
-                <td style={tD}>{formatFechaChile(c.ultimo_contacto)}</td>
                 <td style={{...tD, color:'#e11d48', fontWeight:'bold'}}>{formatFechaChile(c.proximo_contacto)}</td>
                 <td style={{...tD, whiteSpace:'normal', maxWidth:'300px'}}>{c.observaciones}</td>
               </tr>
