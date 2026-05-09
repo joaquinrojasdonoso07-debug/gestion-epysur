@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Users, PlusCircle, Save, X, Edit3, Search, Printer, Trash2 } from 'lucide-react';
+import { PlusCircle, Printer, Search, Edit3, Trash2 } from 'lucide-react';
 
 export default function Cartera() {
   const [data, setData] = useState([]);
@@ -10,10 +10,10 @@ export default function Cartera() {
   const [tempProducts, setTempProducts] = useState([{ nombre: '', precio: 0 }]);
 
   const initialForm = {
-    nombre_fantasia: '', nombre_cliente: '', rut: '', telefono: '', 
-    whatsapp: false, correo: '', direccion: '', comuna: '', region: '', 
-    productos_ofrecidos: '', ultimo_contacto: '', ultimo_valor: 0, 
-    proximo_contacto: '', responsable: '', observaciones: ''
+    id_cliente: '', nombre_fantasia: '', nombre_cliente: '', rut: '', 
+    telefono: '', correo: '', direccion: '', comuna: '', region: '', 
+    whatsapp: false, responsable: '', productos_ofrecidos: '', 
+    ultimo_contacto: '', proximo_contacto: '', observaciones: ''
   };
   const [formData, setFormData] = useState(initialForm);
 
@@ -24,35 +24,10 @@ export default function Cartera() {
 
   useEffect(() => { fetchC(); }, []);
 
-  const hoy = new Date().toISOString().split('T')[0];
-
   const formatFechaChile = (f) => {
     if (!f) return '';
     const [y, m, d] = f.split('-');
     return `${d}-${m}-${y}`;
-  };
-
-  const formatRut = (v) => {
-    let cleaned = v.replace(/[^0-9kK]/g, '');
-    if (cleaned.length <= 1) return cleaned;
-    let cuerpo = cleaned.slice(0, -1);
-    let dv = cleaned.slice(-1).toUpperCase();
-    return cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "-" + dv;
-  };
-
-  const formatPhone = (v) => {
-    let c = v.replace(/\D/g, '');
-    if (c.startsWith('56')) {
-        let rest = c.slice(2);
-        if (rest.length <= 1) return `+56 ${rest}`;
-        if (rest.length <= 5) return `+56 ${rest.slice(0,1)} ${rest.slice(1)}`;
-        return `+56 ${rest.slice(0,1)} ${rest.slice(1,5)} ${rest.slice(5,9)}`;
-    } 
-    if (c.startsWith('9') || c.length > 0) {
-        if (c.length <= 4) return c;
-        return `${c.slice(0,1)} ${c.slice(1,5)} ${c.slice(5,9)}`;
-    }
-    return v;
   };
 
   const handleEdit = (cliente) => {
@@ -77,19 +52,17 @@ export default function Cartera() {
 
   const save = async (e) => {
     e.preventDefault();
-    const totalValue = tempProducts.reduce((sum, p) => sum + Number(p.precio), 0);
     const productString = tempProducts
       .filter(p => p.nombre && p.nombre.trim() !== '')
       .map(p => `${p.nombre} ($${Number(p.precio).toLocaleString('es-CL')})`)
       .join(' | ');
 
-    const cleanData = { ...formData };
+    const cleanData = { ...formData, productos_ofrecidos: productString || null };
     Object.keys(cleanData).forEach(key => { if (cleanData[key] === '') cleanData[key] = null; });
-    const finalData = { ...cleanData, productos_ofrecidos: productString || null, ultimo_valor: totalValue || 0 };
 
     try {
-      if (editingId) await supabase.from('clientes').update(finalData).eq('id', editingId);
-      else await supabase.from('clientes').insert([finalData]);
+      if (editingId) await supabase.from('clientes').update(cleanData).eq('id', editingId);
+      else await supabase.from('clientes').insert([cleanData]);
       setShowForm(false); setEditingId(null); setFormData(initialForm); fetchC();
     } catch (err) { alert("Error: " + err.message); }
   };
@@ -97,132 +70,134 @@ export default function Cartera() {
   const filtrados = data.filter(c => Object.values(c).some(v => String(v).toLowerCase().includes(search.toLowerCase())));
 
   return (
-    <div>
+    <div style={{ width: '100%' }}>
       <style>{`
+        .only-print { display: none !important; }
+        .table-container { width: 100%; overflow-x: auto; background: white; border-radius: 12px; }
+        .app-table { width: 100%; min-width: 3200px; border-collapse: collapse; }
+        .app-table th { background: #1e40af; color: white; padding: 12px; text-align: left; white-space: nowrap; }
+        .app-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+
         @media print {
+          @page { size: letter landscape; margin: 10mm; }
           .no-print { display: none !important; }
-          body { background: white !important; }
-          table { width: 100% !important; font-size: 7pt !important; border-collapse: collapse !important; table-layout: fixed !important; }
-          th, td { border: 1px solid #ccc !important; padding: 3px !important; word-wrap: break-word !important; }
-          @page { size: landscape; margin: 0.5cm; }
+          .only-print { display: table-cell !important; }
+          .hide-on-print { display: none !important; }
+          body { background: white !important; font-family: sans-serif; }
+          .table-container { overflow: visible !important; }
+          .app-table { width: 100% !important; min-width: 100% !important; table-layout: fixed !important; }
+          th, td { border: 1px solid black !important; padding: 5px !important; font-size: 8pt !important; word-wrap: break-word !important; white-space: normal !important; }
+          th { background: #eee !important; color: black !important; }
         }
       `}</style>
 
-      <div className="no-print" style={{marginBottom:'20px'}}>
-        <div style={{display:'flex', gap:'10px', marginBottom:'15px'}}>
-          <button onClick={() => {setEditingId(null); setFormData(initialForm); setTempProducts([{nombre:'', precio:0}]); setShowForm(true);}} style={{...btn, backgroundColor:'#059669', flex:1}}> <PlusCircle size={18}/> NUEVO CLIENTE </button>
-          <button onClick={() => window.print()} style={{...btn, backgroundColor:'#64748b', width:'60px'}}> <Printer size={18}/> </button>
+      {/* CABECERA */}
+      <div className="no-print" style={{ padding: '15px' }}>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+          <button onClick={() => {setEditingId(null); setFormData(initialForm); setTempProducts([{nombre:'', precio:0}]); setShowForm(true);}} style={btnG}> NUEVO CLIENTE </button>
+          <button onClick={() => window.print()} style={btnS}> <Printer size={20}/> </button>
         </div>
-        <div style={{position:'relative'}}>
-          <Search size={18} style={{position:'absolute', left:'12px', top:'12px', color:'#94a3b8'}} />
-          <input type="text" placeholder="Buscar cliente..." style={{...iS, paddingLeft:'40px', marginBottom:0}} onChange={e => setSearch(e.target.value)} />
-        </div>
+        <input type="text" placeholder="Buscar cliente..." style={iS} onChange={e => setSearch(e.target.value)} />
       </div>
 
+      {/* FORMULARIO COMPLETO (UNA COLUMNA) */}
       {showForm && (
-        <div className="no-print" style={{position:'fixed', inset:0, backgroundColor:'rgba(0,0,0,0.8)', display:'flex', justifyContent:'center', padding:'20px', zIndex:100, overflowY:'auto'}}>
-          <form onSubmit={save} style={{backgroundColor:'white', padding:'2rem', borderRadius:'15px', width:'100%', maxWidth:'700px', alignSelf:'flex-start', boxShadow:'0 20px 40px rgba(0,0,0,0.4)'}}>
-            <h3 style={{marginTop:0, color:'#1e40af', borderBottom:'2px solid #f1f5f9', paddingBottom:'10px', textAlign:'center'}}>FICHA TÉCNICA DE CLIENTE</h3>
-            
-            <div style={{marginTop:'20px'}}>
-              <h4 style={sectionTitle}>Identificación</h4>
-              <label style={lS}>Nombre de Fantasía *</label>
-              <input type="text" style={iS} value={formData.nombre_fantasia} onChange={e=>setFormData({...formData, nombre_fantasia: e.target.value})} required />
-              <label style={lS}>Razón Social *</label>
-              <input type="text" style={iS} value={formData.nombre_cliente} onChange={e=>setFormData({...formData, nombre_cliente: e.target.value})} required />
-              <label style={lS}>RUT</label>
-              <input type="text" style={iS} value={formData.rut} onChange={e=>setFormData({...formData, rut: formatRut(e.target.value)})} placeholder="12.345.678-9" />
+        <div className="no-print" style={modalOverlay}>
+          <form onSubmit={save} style={modalContent}>
+            <h3 style={{textAlign:'center', color:'#1e40af', borderBottom:'1px solid #eee', paddingBottom:'10px'}}>FICHA TÉCNICA COMPLETA</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <label style={lS}>ID Personalizado</label><input type="text" style={iS} value={formData.id_cliente} onChange={e=>setFormData({...formData, id_cliente: e.target.value})} />
+              <label style={lS}>Nombre Fantasía *</label><input type="text" style={iS} value={formData.nombre_fantasia} onChange={e=>setFormData({...formData, nombre_fantasia: e.target.value})} required />
+              <label style={lS}>Razón Social *</label><input type="text" style={iS} value={formData.nombre_cliente} onChange={e=>setFormData({...formData, nombre_cliente: e.target.value})} required />
+              <label style={lS}>RUT</label><input type="text" style={iS} value={formData.rut} onChange={e=>setFormData({...formData, rut: e.target.value})} />
+              <label style={lS}>Cliente (Responsable)</label><input type="text" style={iS} value={formData.responsable} onChange={e=>setFormData({...formData, responsable: e.target.value})} />
+              <label style={lS}>Dirección</label><input type="text" style={iS} value={formData.direccion} onChange={e=>setFormData({...formData, direccion: e.target.value})} />
+              <label style={lS}>Comuna</label><input type="text" style={iS} value={formData.comuna} onChange={e=>setFormData({...formData, comuna: e.target.value})} />
+              <label style={lS}>Región</label><input type="text" style={iS} value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} />
+              <label style={lS}>Teléfono</label><input type="text" style={iS} value={formData.telefono} onChange={e=>setFormData({...formData, telefono: e.target.value})} />
+              <label style={lS}>Correo</label><input type="email" style={iS} value={formData.correo} onChange={e=>setFormData({...formData, correo: e.target.value})} />
               
-              <h4 style={sectionTitle}>Contacto</h4>
-              <label style={lS}>Teléfono</label>
-              <input type="text" style={iS} value={formData.telefono} onChange={e=>setFormData({...formData, telefono: formatPhone(e.target.value)})} />
-              <div style={{display:'flex', alignItems:'center', gap:'10px', marginBottom:'15px', background:'#f0fdf4', padding:'10px', borderRadius:'8px'}}>
-                <input type="checkbox" id="ws" checked={formData.whatsapp} onChange={e=>setFormData({...formData, whatsapp: e.target.checked})} style={{width:'18px', height:'18px'}} />
-                <label htmlFor="ws" style={{fontWeight:'bold', color:'#166534', fontSize:'0.9rem'}}>¿Tiene WhatsApp?</label>
+              <div style={{display:'flex', alignItems:'center', gap:'10px', background:'#f8fafc', padding:'10px', borderRadius:'8px'}}>
+                <input type="checkbox" checked={formData.whatsapp} onChange={e=>setFormData({...formData, whatsapp: e.target.checked})} />
+                <label style={lS}>¿Tiene WhatsApp?</label>
               </div>
-              <label style={lS}>Correo Electrónico</label>
-              <input type="email" style={iS} value={formData.correo} onChange={e=>setFormData({...formData, correo: e.target.value})} />
 
-              <h4 style={sectionTitle}>Ubicación</h4>
-              <label style={lS}>Dirección</label>
-              <input type="text" style={iS} value={formData.direccion} onChange={e=>setFormData({...formData, direccion: e.target.value})} />
-              <label style={lS}>Comuna</label>
-              <input type="text" style={iS} value={formData.comuna} onChange={e=>setFormData({...formData, comuna: e.target.value})} />
-              <label style={lS}>Región</label>
-              <input type="text" style={iS} value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} />
+              <label style={lS}>Fecha Último Contacto</label><input type="date" style={iS} value={formData.ultimo_contacto || ''} onChange={e=>setFormData({...formData, ultimo_contacto: e.target.value})} />
+              <label style={lS}>Fecha Próximo Contacto</label><input type="date" style={iS} value={formData.proximo_contacto || ''} onChange={e=>setFormData({...formData, proximo_contacto: e.target.value})} />
 
-              <h4 style={sectionTitle}>Gestión Comercial</h4>
-              <label style={lS}>Responsable / Vendedor</label>
-              <input type="text" style={iS} value={formData.responsable} onChange={e=>setFormData({...formData, responsable: e.target.value})} />
-              <label style={lS}>Fecha Último Contacto</label>
-              <input type="date" style={iS} value={formData.ultimo_contacto || ''} onChange={e=>setFormData({...formData, ultimo_contacto: e.target.value})} />
-              <label style={lS}>Fecha Próxima Llamada</label>
-              <input type="date" style={iS} min={hoy} value={formData.proximo_contacto || ''} onChange={e=>setFormData({...formData, proximo_contacto: e.target.value})} />
-            </div>
-
-            <h4 style={sectionTitle}>Productos y Precios</h4>
-            <div style={{background:'#f8fafc', padding:'20px', borderRadius:'10px', border:'1px solid #e2e8f0', marginBottom:'20px'}}>
-              {tempProducts.map((p, idx) => (
-                <div key={idx} style={{marginBottom:'15px', borderBottom:'1px solid #e2e8f0', paddingBottom:'15px'}}>
-                  <div style={{display:'flex', gap:'10px', marginBottom:'8px'}}>
-                    <input type="text" placeholder="Producto" style={{...iS, marginBottom:0}} value={p.nombre} onChange={e=>{let n=[...tempProducts]; n[idx].nombre=e.target.value; setTempProducts(n);}} />
-                    {tempProducts.length > 1 && <button type="button" onClick={()=>setTempProducts(tempProducts.filter((_,i)=>i!==idx))} style={{color:'#ef4444', border:'none', background:'none', cursor:'pointer'}}><Trash2 size={20}/></button>}
+              <div style={{background:'#f1f5f9', padding:'10px', borderRadius:'8px'}}>
+                <label style={lS}>Gestión de Productos</label>
+                {tempProducts.map((p, idx) => (
+                  <div key={idx} style={{display:'flex', gap:'5px', marginBottom:'5px'}}>
+                    <input type="text" placeholder="Producto" style={iS} value={p.nombre} onChange={e=>{let n=[...tempProducts]; n[idx].nombre=e.target.value; setTempProducts(n);}} />
+                    <input type="number" placeholder="$" style={{...iS, width:'100px'}} value={p.precio} onChange={e=>{let n=[...tempProducts]; n[idx].precio=e.target.value; setTempProducts(n);}} />
+                    <button type="button" onClick={()=>setTempProducts(tempProducts.filter((_,i)=>i!==idx))} style={{color:'red', border:'none', background:'none'}}>×</button>
                   </div>
-                  <input type="number" placeholder="Precio $" style={{...iS, marginBottom:0}} value={p.precio} onChange={e=>{let n=[...tempProducts]; n[idx].precio=e.target.value; setTempProducts(n);}} />
-                </div>
-              ))}
-              <button type="button" onClick={() => setTempProducts([...tempProducts, {nombre:'', precio:0}])} style={{...btn, backgroundColor:'#1e40af', padding:'8px 15px', fontSize:'0.8rem', width:'auto'}}>+ Añadir Producto</button>
+                ))}
+                <button type="button" onClick={()=>setTempProducts([...tempProducts, {nombre:'', precio:0}])} style={{fontSize:'0.75rem', color:'#1e40af', border:'none', background:'none', cursor:'pointer'}}>+ Añadir producto</button>
+              </div>
+
+              <label style={lS}>Observaciones</label><textarea style={{...iS, height:'60px'}} value={formData.observaciones} onChange={e=>setFormData({...formData, observaciones: e.target.value})} />
             </div>
-
-            <label style={lS}>Observaciones</label>
-            <textarea style={{...iS, height:'120px'}} value={formData.observaciones} onChange={e=>setFormData({...formData, observaciones: e.target.value})} />
-
-            <div style={{display:'flex', gap:'15px', marginTop:'30px'}}>
-              <button type="submit" style={{...btn, backgroundColor:'#1e40af', flex:1}}>GUARDAR TODO</button>
-              <button type="button" onClick={()=>{setShowForm(false); setEditingId(null);}} style={{...btn, backgroundColor:'#64748b', flex:1}}>CANCELAR</button>
+            <div style={{display:'flex', gap:'10px', marginTop:'20px'}}>
+              <button type="submit" style={btnP}>GUARDAR CAMBIOS</button>
+              <button type="button" onClick={()=>setShowForm(false)} style={btnS}>CERRAR</button>
             </div>
           </form>
         </div>
       )}
 
-      <div style={{overflowX:'auto', backgroundColor:'white', borderRadius:'12px', boxShadow:'0 4px 12px rgba(0,0,0,0.1)'}}>
-        <table style={{width:'100%', borderCollapse:'collapse', fontSize:'0.65rem', minWidth:'2800px'}}>
+      {/* TABLA APP (TODAS LAS COLUMNAS) */}
+      <div className="table-container">
+        <table className="app-table">
           <thead>
-            <tr style={{backgroundColor:'#1e40af', color:'white'}}>
-              <th className="no-print" style={tH}>ACCIONES</th>
-              <th style={tH}>ID</th>
-              <th style={tH}>FANTASÍA</th>
-              <th style={tH}>RAZÓN SOCIAL</th>
-              <th style={tH}>RUT</th>
-              <th style={tH}>TELÉFONO</th>
-              <th style={tH}>DIRECCIÓN</th>
-              <th style={tH}>UBICACIÓN</th>
-              <th style={tH}>PRODUCTOS</th>
-              <th style={tH}>TOTAL</th>
-              <th style={tH}>PRÓX. CONTACTO</th>
-              <th style={tH}>OBSERVACIONES</th>
+            <tr>
+              <th className="no-print">ACC.</th>
+              <th>ID PERS.</th>
+              <th>FANTASÍA</th>
+              <th>RAZÓN SOCIAL</th>
+              <th className="hide-on-print">RUT</th>
+              <th>CLIENTE</th>
+              <th className="only-print">UBICACIÓN</th>
+              <th className="hide-on-print">DIRECCIÓN</th>
+              <th className="hide-on-print">COMUNA</th>
+              <th className="hide-on-print">REGIÓN</th>
+              <th className="only-print">CONTACTO</th>
+              <th className="hide-on-print">TELÉFONO</th>
+              <th className="hide-on-print">CORREO</th>
+              <th className="hide-on-print">WSP</th>
+              <th>PRODUCTOS</th>
+              <th>ÚLT. CONT.</th>
+              <th>PRÓX. CONT.</th>
+              <th>OBSERVACIONES</th>
             </tr>
           </thead>
           <tbody>
             {filtrados.map(c => (
-              <tr key={c.id} style={{borderBottom:'1px solid #eee'}}>
-                <td className="no-print" style={{...tD, display:'flex', gap:'5px'}}>
-                  <button onClick={()=>handleEdit(c)} style={{...smBtn, backgroundColor:'#3b82f6'}}><Edit3 size={14} color="white"/></button>
-                  <button onClick={()=>deleteCliente(c.id, c.nombre_fantasia)} style={{...smBtn, backgroundColor:'#ef4444'}}><Trash2 size={14} color="white"/></button>
+              <tr key={c.id}>
+                <td className="no-print">
+                  <div style={{display:'flex', gap:'5px'}}>
+                    <button onClick={()=>handleEdit(c)} style={smEdit}><Edit3 size={14}/></button>
+                    <button onClick={()=>deleteCliente(c.id, c.nombre_fantasia)} style={smDel}><Trash2 size={14}/></button>
+                  </div>
                 </td>
-                <td style={tD}>{c.id_cliente || c.id}</td>
-                <td style={{...tD, fontWeight:'bold', color:'#1e40af'}}>{c.nombre_fantasia}</td>
-                <td style={tD}>{c.nombre_cliente}</td>
-                <td style={tD}>{c.rut}</td>
-                <td style={tD}>{c.telefono} {c.whatsapp && '✅'}</td>
-                <td style={tD}>{c.direccion}</td>
-                <td style={tD}>{c.comuna} / {c.region}</td>
-                <td style={{...tD, whiteSpace:'normal', maxWidth:'400px', color:'#475569'}}>
-                  {c.productos_ofrecidos?.split(' | ').map((p, i) => <div key={i}>• {p}</div>)}
-                </td>
-                <td style={{...tD, fontWeight:'bold'}}>${Number(c.ultimo_valor).toLocaleString('es-CL')}</td>
-                <td style={{...tD, color:'#e11d48', fontWeight:'bold'}}>{formatFechaChile(c.proximo_contacto)}</td>
-                <td style={{...tD, whiteSpace:'normal', maxWidth:'300px'}}>{c.observaciones}</td>
+                <td>{c.id_cliente}</td>
+                <td style={{fontWeight:'bold'}}>{c.nombre_fantasia}</td>
+                <td>{c.nombre_cliente}</td>
+                <td className="hide-on-print">{c.rut}</td>
+                <td>{c.responsable}</td>
+                <td className="only-print">{c.direccion}, {c.comuna}, {c.region}</td>
+                <td className="hide-on-print">{c.direccion}</td>
+                <td className="hide-on-print">{c.comuna}</td>
+                <td className="hide-on-print">{c.region}</td>
+                <td className="only-print">{c.telefono} / {c.correo}</td>
+                <td className="hide-on-print">{c.telefono}</td>
+                <td className="hide-on-print">{c.correo}</td>
+                <td className="hide-on-print">{c.whatsapp ? 'SÍ' : 'NO'}</td>
+                <td style={{whiteSpace:'normal'}}>{c.productos_ofrecidos}</td>
+                <td>{formatFechaChile(c.ultimo_contacto)}</td>
+                <td style={{fontWeight:'bold', color:'#e11d48'}}>{formatFechaChile(c.proximo_contacto)}</td>
+                <td style={{whiteSpace:'normal'}}>{c.observaciones}</td>
               </tr>
             ))}
           </tbody>
@@ -232,10 +207,12 @@ export default function Cartera() {
   );
 }
 
-const iS = { width:'100%', padding:'12px', border:'1px solid #cbd5e1', borderRadius:'8px', boxSizing:'border-box', fontSize:'1rem', marginBottom:'15px' };
-const btn = { padding:'15px', color:'white', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', display:'flex', alignItems:'center', gap:'10px', justifyContent:'center' };
-const smBtn = { padding:'6px', border:'none', borderRadius:'4px', cursor:'pointer' };
-const tH = { padding:'15px 10px', textAlign:'left', whiteSpace:'nowrap' };
-const tD = { padding:'12px 10px', whiteSpace:'nowrap' };
-const lS = { fontSize:'0.8rem', fontWeight:'bold', color:'#475569', display:'block', marginBottom:'6px', textTransform:'uppercase' };
-const sectionTitle = { borderLeft:'4px solid #1e40af', paddingLeft:'10px', color:'#1e40af', marginTop:'25px', marginBottom:'15px', fontSize:'1.1rem' };
+const iS = { width:'100%', padding:'8px', border:'1px solid #cbd5e1', borderRadius:'6px', fontSize:'0.9rem' };
+const btnG = { padding:'12px', background:'#059669', color:'white', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', flex:1 };
+const btnP = { padding:'12px', background:'#1e40af', color:'white', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', flex:1 };
+const btnS = { padding:'12px', background:'#64748b', color:'white', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold' };
+const smEdit = { background:'#3b82f6', color:'white', border:'none', padding:'5px', borderRadius:'4px', cursor:'pointer' };
+const smDel = { background:'#ef4444', color:'white', border:'none', padding:'5px', borderRadius:'4px', cursor:'pointer' };
+const lS = { fontSize:'0.7rem', fontWeight:'bold', color:'#475569', display:'block', marginBottom:'2px', textTransform:'uppercase' };
+const modalOverlay = { position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', justifyContent:'center', padding:'20px', zIndex:100, overflowY:'auto' };
+const modalContent = { background:'white', padding:'25px', borderRadius:'15px', width:'100%', maxWidth:'600px', alignSelf:'flex-start' };
