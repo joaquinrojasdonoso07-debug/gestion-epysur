@@ -5,6 +5,11 @@ import { Printer, Edit3, Trash2, XCircle } from 'lucide-react';
 export default function Cartera() {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState('');
+  
+  // NUEVOS FILTROS SEPARADOS PARA EVITAR MEZCLAS
+  const [searchComuna, setSearchComuna] = useState('');
+  const [searchRegion, setSearchRegion] = useState('');
+
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [tempProducts, setTempProducts] = useState([{ nombre: '', precio: '' }]);
@@ -64,28 +69,44 @@ export default function Cartera() {
     setShowForm(false); setEditingId(null); setFormData(initialForm); fetchData();
   };
 
-  const filtrados = data.filter(c => Object.values(c).some(v => String(v || '').toLowerCase().includes(search.toLowerCase())));
+  // LOGICA DE FILTRADO ESTRICTO QUE SEPARA BUSQUEDA GENERAL, COMUNA Y REGION
+  const filtrados = data.filter(c => {
+    const cumpleGeneral = Object.values(c).some(v => String(v || '').toLowerCase().includes(search.toLowerCase()));
+    const cumpleComuna = (c.comuna || '').toLowerCase().includes(searchComuna.toLowerCase());
+    const cumpleRegion = (c.region || '').toLowerCase().includes(searchRegion.toLowerCase());
+    return cumpleGeneral && cumpleComuna && cumpleRegion;
+  });
 
   return (
     <div style={{ width: '100%' }}>
       <style>{`
         .table-area { width: 100%; overflow-x: auto; background: white; }
-        .app-table { width: 100%; min-width: 3200px; border-collapse: collapse; border: 1.5pt solid black; }
+        .app-table { width: 100%; min-width: 3200px; border-collapse: collapse; border: 1px solid black; }
         .app-table th, .app-table td { border: 1.5pt solid black; padding: 10px; vertical-align: top; }
         .app-table th { background: #1e40af; color: white; text-align: left; }
         @media print {
           @page { size: letter landscape; margin: 0.4cm; }
           .no-print { display: none !important; }
           .app-table { width: 100% !important; min-width: 100% !important; table-layout: fixed !important; border: 2pt solid black !important; }
-          th { border: 2pt solid black !important; background: #e5e5e5 !important; color: black !important; text-align: center !important; }
-          td { height: 2.85cm !important; border: 2pt solid black !important; font-size: 11pt !important; white-space: normal !important; word-wrap: break-word !important; }
+          th { border: 2pt solid black !important; background: #e5e5e5 !important; color: black !important; font-size: 10pt !important; text-align: center !important; }
+          td { height: 2.85cm !important; border: 1.5pt solid black !important; font-size: 11pt !important; white-space: normal !important; word-wrap: break-word !important; }
         }
       `}</style>
 
       <div className="no-print" style={{ padding: '15px' }}>
-        <button onClick={() => {setEditingId(null); setFormData(initialForm); setTempProducts([{nombre:'', precio:''}]); setShowForm(true);}} style={btnG}>NUEVO CLIENTE</button>
-        <button onClick={() => window.print()} style={btnS}>IMPRIMIR</button>
-        <input type="text" placeholder="Buscar cliente..." style={iS} onChange={e => setSearch(e.target.value)} />
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+          <button onClick={() => {setEditingId(null); setFormData(initialForm); setTempProducts([{nombre:'', precio:''}]); setShowForm(true);}} style={btnG}>NUEVO CLIENTE</button>
+          <button onClick={() => window.print()} style={btnS}>IMPRIMIR</button>
+        </div>
+        
+        {/* BLOQUE DE BUSCADORES ORGANIZADOS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+          <input type="text" placeholder="Buscar por Nombre, RUT o Datos generales..." style={iS} value={search} onChange={e => setSearch(e.target.value)} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <input type="text" placeholder="Filtrar estrictamente por COMUNA... (Ej: Los Lagos)" style={iS} value={searchComuna} onChange={e => setSearchComuna(e.target.value)} />
+            <input type="text" placeholder="Filtrar estrictamente por REGIÓN... (Ej: Los Lagos)" style={iS} value={searchRegion} onChange={e => setSearchRegion(e.target.value)} />
+          </div>
+        </div>
       </div>
 
       {showForm && (
@@ -133,7 +154,7 @@ export default function Cartera() {
               <th className="no-print" style={{width:'80px'}}>ACC</th>
               <th style={{width:'180px'}}>FANTASÍA</th>
               <th style={{width:'150px'}}>CLIENTE</th>
-              <th style={{width:'250px'}}>UBICACIÓN</th>
+              <th style={{width:'250px'}}>DIRECCIÓN</th>
               <th style={{width:'120px'}}>TELÉFONO</th>
               <th style={{width:'300px'}}>PRODUCTOS</th>
               <th style={{width:'100px'}}>ÚLT. CONT</th>
