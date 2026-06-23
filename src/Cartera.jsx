@@ -5,8 +5,6 @@ import { Printer, Edit3, Trash2, XCircle } from 'lucide-react';
 export default function Cartera() {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState('');
-  
-  // NUEVOS FILTROS SEPARADOS PARA EVITAR MEZCLAS
   const [searchComuna, setSearchComuna] = useState('');
   const [searchRegion, setSearchRegion] = useState('');
 
@@ -69,7 +67,6 @@ export default function Cartera() {
     setShowForm(false); setEditingId(null); setFormData(initialForm); fetchData();
   };
 
-  // LOGICA DE FILTRADO ESTRICTO QUE SEPARA BUSQUEDA GENERAL, COMUNA Y REGION
   const filtrados = data.filter(c => {
     const cumpleGeneral = Object.values(c).some(v => String(v || '').toLowerCase().includes(search.toLowerCase()));
     const cumpleComuna = (c.comuna || '').toLowerCase().includes(searchComuna.toLowerCase());
@@ -99,12 +96,11 @@ export default function Cartera() {
           <button onClick={() => window.print()} style={btnS}>IMPRIMIR</button>
         </div>
         
-        {/* BLOQUE DE BUSCADORES ORGANIZADOS */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
           <input type="text" placeholder="Buscar por Nombre, RUT o Datos generales..." style={iS} value={search} onChange={e => setSearch(e.target.value)} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <input type="text" placeholder="Filtrar estrictamente por COMUNA... (Ej: Los Lagos)" style={iS} value={searchComuna} onChange={e => setSearchComuna(e.target.value)} />
-            <input type="text" placeholder="Filtrar estrictamente por REGIÓN... (Ej: Los Lagos)" style={iS} value={searchRegion} onChange={e => setSearchRegion(e.target.value)} />
+            <input type="text" placeholder="Comuna" style={iS} value={searchComuna} onChange={e => setSearchComuna(e.target.value)} />
+            <input type="text" placeholder="Región" style={iS} value={searchRegion} onChange={e => setSearchRegion(e.target.value)} />
           </div>
         </div>
       </div>
