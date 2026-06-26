@@ -68,9 +68,33 @@ export default function Cartera() {
   };
 
   const filtrados = data.filter(c => {
-    const cumpleGeneral = Object.values(c).some(v => String(v || '').toLowerCase().includes(search.toLowerCase()));
-    const cumpleComuna = (c.comuna || '').toLowerCase().includes(searchComuna.toLowerCase());
-    const cumpleRegion = (c.region || '').toLowerCase().includes(searchRegion.toLowerCase());
+    const term = search.toLowerCase().trim();
+    
+    if (!term) {
+      const cumpleComuna = (c.comuna || '').toLowerCase().includes(searchComuna.toLowerCase().trim());
+      const cumpleRegion = (c.region || '').toLowerCase().includes(searchRegion.toLowerCase().trim());
+      return cumpleComuna && cumpleRegion;
+    }
+
+    const ultContCh = formatFechaChile(c.ultimo_contacto).toLowerCase();
+    const proxContCh = formatFechaChile(c.proximo_contacto).toLowerCase();
+
+    const cumpleGeneral = 
+      String(c.nombre_fantasia || '').toLowerCase().includes(term) ||
+      String(c.nombre_cliente || '').toLowerCase().includes(term) ||
+      String(c.rut || '').toLowerCase().includes(term) ||
+      String(c.responsable || '').toLowerCase().includes(term) ||
+      String(c.telefono || '').toLowerCase().includes(term) ||
+      String(c.correo || '').toLowerCase().includes(term) ||
+      String(c.direccion || '').toLowerCase().includes(term) ||
+      String(c.observaciones || '').toLowerCase().includes(term) ||
+      String(c.productos_ofrecidos || '').toLowerCase().includes(term) ||
+      ultContCh.includes(term) || 
+      proxContCh.includes(term);
+
+    const cumpleComuna = (c.comuna || '').toLowerCase().includes(searchComuna.toLowerCase().trim());
+    const cumpleRegion = (c.region || '').toLowerCase().includes(searchRegion.toLowerCase().trim());
+    
     return cumpleGeneral && cumpleComuna && cumpleRegion;
   });
 
@@ -78,15 +102,31 @@ export default function Cartera() {
     <div style={{ width: '100%' }}>
       <style>{`
         .table-area { width: 100%; overflow-x: auto; background: white; }
-        .app-table { width: 100%; min-width: 3200px; border-collapse: collapse; border: 1px solid black; }
-        .app-table th, .app-table td { border: 1.5pt solid black; padding: 10px; vertical-align: top; }
+        .app-table { width: 100%; min-width: 3200px; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
+        .app-table th, .app-table td { border: 1.5pt solid black; padding: 10px; vertical-align: top; word-wrap: break-word; }
         .app-table th { background: #1e40af; color: white; text-align: left; }
+        
+        /* IMPRESION CARTA HORIZONTAL OPTIMIZADA CON COLUMNAS COMBINADAS */
         @media print {
           @page { size: letter landscape; margin: 0.4cm; }
+          html, body { width: 279mm; height: 216mm; background: white; }
           .no-print { display: none !important; }
-          .app-table { width: 100% !important; min-width: 100% !important; table-layout: fixed !important; border: 2pt solid black !important; }
-          th { border: 2pt solid black !important; background: #e5e5e5 !important; color: black !important; font-size: 10pt !important; text-align: center !important; }
-          td { height: 2.85cm !important; border: 1.5pt solid black !important; font-size: 11pt !important; white-space: normal !important; word-wrap: break-word !important; }
+          
+          .table-area { overflow: visible !important; width: 100% !important; }
+          .app-table { width: 100% !important; min-width: 100% !important; table-layout: fixed !important; border: 2pt solid black !important; page-break-inside: auto; }
+          
+          tr { page-break-inside: avoid; page-break-after: auto; }
+          th { border: 1.5pt solid black !important; background: #e5e5e5 !important; color: black !important; font-size: 10pt !important; text-align: center !important; }
+          td { height: 2.85cm !important; border: 1.5pt solid black !important; font-size: 10.5pt !important; white-space: normal !important; word-wrap: break-word !important; padding: 6px !important; }
+          
+          /* Asignamos anchos proporcionales para que las columnas combinadas tengan excelente espacio */
+          .col-print-id { width: 22% !important; }
+          .col-print-ub { width: 22% !important; }
+          .col-print-tel { width: 11% !important; }
+          .col-print-prod { width: 18% !important; }
+          .col-print-f1 { width: 8% !important; }
+          .col-print-f2 { width: 8% !important; }
+          .col-print-obs { width: 11% !important; }
         }
       `}</style>
 
@@ -148,14 +188,19 @@ export default function Cartera() {
           <thead>
             <tr>
               <th className="no-print" style={{width:'80px'}}>ACC</th>
-              <th style={{width:'180px'}}>FANTASÍA</th>
-              <th style={{width:'150px'}}>CLIENTE</th>
-              <th style={{width:'250px'}}>DIRECCIÓN</th>
-              <th style={{width:'120px'}}>TELÉFONO</th>
-              <th style={{width:'300px'}}>PRODUCTOS</th>
-              <th style={{width:'100px'}}>ÚLT. CONT</th>
-              <th style={{width:'100px'}}>PRÓX. CONT</th>
-              <th style={{width:'200px'}}>OBSERVACIONES</th>
+              <th className="col-print-id" style={{width:'180px'}}>FANTASÍA / CLIENTE</th>
+              <th className="no-print" style={{width:'200px'}}>RAZÓN SOCIAL</th>
+              <th className="no-print" style={{width:'140px'}}>RUT</th>
+              <th className="no-print" style={{width:'150px'}}>CLIENTE (WEB)</th>
+              <th className="col-print-ub" style={{width:'250px'}}>DIRECCIÓN / UBICACIÓN</th>
+              <th className="no-print" style={{width:'150px'}}>COMUNA (WEB)</th>
+              <th className="no-print" style={{width:'150px'}}>REGIÓN (WEB)</th>
+              <th className="col-print-tel" style={{width:'150px'}}>TELÉFONO</th>
+              <th className="no-print" style={{width:'200px'}}>CORREO</th>
+              <th className="col-print-prod" style={{width:'300px'}}>PRODUCTOS</th>
+              <th className="col-print-f1" style={{width:'110px'}}>ÚLT. CONT</th>
+              <th className="col-print-f2" style={{width:'110px'}}>PRÓX. CONT</th>
+              <th className="col-print-obs" style={{width:'300px'}}>OBSERVACIONES</th>
             </tr>
           </thead>
           <tbody>
@@ -167,14 +212,35 @@ export default function Cartera() {
                       <button onClick={()=>handleDelete(c.id, c.nombre_fantasia)} style={smDel}><Trash2 size={14}/></button>
                    </div>
                 </td>
-                <td style={{fontWeight:'bold'}}>{c.nombre_fantasia}</td>
-                <td>{c.responsable}</td>
-                <td>{c.direccion}, {c.comuna}</td>
-                <td>{c.telefono}</td>
-                <td style={{padding:0}}>{c.productos_ofrecidos?.split(' | ').map((p,i)=><div key={i} style={{borderBottom:'1px solid black', padding:'4px'}}>{p}</div>)}</td>
-                <td>{formatFechaChile(c.ultimo_contacto)}</td>
-                <td style={{fontWeight:'bold'}}>{formatFechaChile(c.proximo_contacto)}</td>
-                <td>{c.observaciones}</td>
+                
+                {/* COLUMNA COMBINADA 1: IDENTIFICACIÓN (Muestra Fantasía, Real y Responsable en la impresión) */}
+                <td className="col-print-id">
+                  <div style={{fontWeight:'bold'}}>{c.nombre_fantasia}</div>
+                  <div className="only-print" style={{fontSize:'0.85rem', color:'#444', marginTop:'2px'}}>{c.nombre_cliente}</div>
+                  <div className="only-print" style={{fontSize:'0.85rem', fontStyle:'italic', marginTop:'2px'}}>{c.responsable}</div>
+                </td>
+                
+                <td className="no-print">{c.nombre_cliente}</td>
+                <td className="no-print">{c.rut}</td>
+                <td className="no-print">{c.responsable}</td>
+                
+                {/* COLUMNA COMBINADA 2: UBICACIÓN (Muestra Dirección, Comuna y Región en la impresión) */}
+                <td className="col-print-ub">
+                  <div>{c.direccion}</div>
+                  <div className="only-print" style={{fontSize:'0.85rem', fontWeight:'bold', marginTop:'2px'}}>{c.comuna} - {c.region}</div>
+                </td>
+                
+                <td className="no-print">{c.comuna}</td>
+                <td className="no-print">{c.region}</td>
+                
+                <td className="col-print-tel">{c.telefono}</td>
+                <td className="no-print">{c.correo}</td>
+                <td style={{padding:0}} className="col-print-prod">
+                  {c.productos_ofrecidos?.split(' | ').map((p,i)=><div key={i} style={{borderBottom:'1px solid black', padding:'4px'}}>{p}</div>)}
+                </td>
+                <td className="col-print-f1">{formatFechaChile(c.ultimo_contacto)}</td>
+                <td style={{fontWeight:'bold'}} className="col-print-f2">{formatFechaChile(c.proximo_contacto)}</td>
+                <td className="col-print-obs">{c.observaciones}</td>
               </tr>
             ))}
           </tbody>
