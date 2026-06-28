@@ -24,7 +24,7 @@ export default function App() {
   if (!isLoggedIn) {
     return (
       <div style={{ 
-        height: '100vh', display: 'flex', alignItems: 'center', justifycontent: 'center', 
+        height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', 
         backgroundColor: '#f1f5f9', fontFamily: 'sans-serif' 
       }}>
         <form onSubmit={handleLogin} style={{ 
@@ -65,29 +65,63 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif' }}>
-      <nav style={{ 
-        backgroundColor: '#1e40af', color: 'white', padding: '1rem 2rem', 
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        position: 'sticky', top: 0, zIndex: 50
-      }} className="no-print">
+      {/* Añadimos estilos CSS nativos para detectar celulares automáticamente */}
+      <style>{`
+        .navbar-epysur {
+          background-color: #1e40af;
+          color: white;
+          padding: 1rem 2rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          position: sticky;
+          top: 0;
+          z-index: 50;
+        }
+        .buttons-container-epysur {
+          display: flex;
+          gap: 1.5rem;
+        }
+        
+        /* CUANDO SEA CELULAR (PANTALLAS CHICAS) */
+        @media (max-width: 640px) {
+          .navbar-epysur {
+            flex-direction: column !important;
+            gap: 10px !important;
+            padding: 1rem !important;
+            text-align: center;
+          }
+          .buttons-container-epysur {
+            width: 100% !important;
+            justify-content: space-around !important;
+            gap: 5px !important;
+            flex-wrap: wrap !important; /* Permite que los botones bajen si les falta espacio */
+          }
+          .nav-btn-epysur {
+            font-size: 0.85rem !important; /* Achica un pelo el texto en el teléfono para que quepan todos */
+            padding: 6px 4px !important;
+          }
+        }
+      `}</style>
+
+      <nav className="navbar-epysur no-print">
         <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold' }}>EPYSUR ERP</h1>
-        <div style={{ display: 'flex', gap: '1.5rem' }}>
-          <button onClick={() => setView('cartera')} style={{ ...navBtn, fontWeight: view === 'cartera' ? 'bold' : '500', color: view === 'cartera' ? '#fef08a' : 'white' }}>
+        <div className="buttons-container-epysur">
+          <button onClick={() => setView('cartera')} className="nav-btn-epysur" style={{ ...navBtn, fontWeight: view === 'cartera' ? 'bold' : '500', color: view === 'cartera' ? '#fef08a' : 'white' }}>
             <Users size={18} /> Cartera
           </button>
-          <button onClick={() => setView('creditos')} style={{ ...navBtn, fontWeight: view === 'creditos' ? 'bold' : '500', color: view === 'creditos' ? '#fef08a' : 'white' }}>
+          <button onClick={() => setView('creditos')} className="nav-btn-epysur" style={{ ...navBtn, fontWeight: view === 'creditos' ? 'bold' : '500', color: view === 'creditos' ? '#fef08a' : 'white' }}>
             <CreditCard size={18} /> Créditos
           </button>
-          <button onClick={() => setView('cotizador')} style={{ ...navBtn, fontWeight: view === 'cotizador' ? 'bold' : '500', color: view === 'cotizador' ? '#fef08a' : 'white' }}>
+          <button onClick={() => setView('cotizador')} className="nav-btn-epysur" style={{ ...navBtn, fontWeight: view === 'cotizador' ? 'bold' : '500', color: view === 'cotizador' ? '#fef08a' : 'white' }}>
             <FileText size={18} /> Cotizador
           </button>
-          <button onClick={() => setIsLoggedIn(false)} style={{ ...navBtn, color: '#fca5a5' }}>
+          <button onClick={() => setIsLoggedIn(false)} className="nav-btn-epysur" style={{ ...navBtn, color: '#fca5a5' }}>
             <LogOut size={18} /> Salir
           </button>
         </div>
       </nav>
 
-      {/* Regresamos el padding exacto de 2rem que requería Cartera para verse e imprimirse bien */}
       <main style={{ padding: '2rem' }}>
         {view === 'cartera' && <Cartera />}
         {view === 'creditos' && <Creditos />}
