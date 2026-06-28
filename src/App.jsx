@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import Cartera from './Cartera';
 import Creditos from './Creditos';
-import { Users, CreditCard, LogOut } from 'lucide-react';
+import Cotizador from './Cotizador';
+import { Users, CreditCard, LogOut, FileText } from 'lucide-react';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -11,7 +12,6 @@ export default function App() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Convertimos a minúsculas para que acepte epysur, Epysur, EPYSUR, etc.
     const userLower = username.toLowerCase();
     
     if (userLower === 'epysur' && password === 'rodoepysur') {
@@ -24,7 +24,7 @@ export default function App() {
   if (!isLoggedIn) {
     return (
       <div style={{ 
-        height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+        height: '100vh', display: 'flex', alignItems: 'center', justifycontent: 'center', 
         backgroundColor: '#f1f5f9', fontFamily: 'sans-serif' 
       }}>
         <form onSubmit={handleLogin} style={{ 
@@ -72,11 +72,14 @@ export default function App() {
       }} className="no-print">
         <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold' }}>EPYSUR ERP</h1>
         <div style={{ display: 'flex', gap: '1.5rem' }}>
-          <button onClick={() => setView('cartera')} style={navBtn}>
+          <button onClick={() => setView('cartera')} style={{ ...navBtn, fontWeight: view === 'cartera' ? 'bold' : '500', color: view === 'cartera' ? '#fef08a' : 'white' }}>
             <Users size={18} /> Cartera
           </button>
-          <button onClick={() => setView('creditos')} style={navBtn}>
+          <button onClick={() => setView('creditos')} style={{ ...navBtn, fontWeight: view === 'creditos' ? 'bold' : '500', color: view === 'creditos' ? '#fef08a' : 'white' }}>
             <CreditCard size={18} /> Créditos
+          </button>
+          <button onClick={() => setView('cotizador')} style={{ ...navBtn, fontWeight: view === 'cotizador' ? 'bold' : '500', color: view === 'cotizador' ? '#fef08a' : 'white' }}>
+            <FileText size={18} /> Cotizador
           </button>
           <button onClick={() => setIsLoggedIn(false)} style={{ ...navBtn, color: '#fca5a5' }}>
             <LogOut size={18} /> Salir
@@ -84,8 +87,11 @@ export default function App() {
         </div>
       </nav>
 
+      {/* Regresamos el padding exacto de 2rem que requería Cartera para verse e imprimirse bien */}
       <main style={{ padding: '2rem' }}>
-        {view === 'cartera' ? <Cartera /> : <Creditos />}
+        {view === 'cartera' && <Cartera />}
+        {view === 'creditos' && <Creditos />}
+        {view === 'cotizador' && <Cotizador />}
       </main>
     </div>
   );
@@ -95,5 +101,6 @@ const iS = { width: '100%', padding: '12px', marginBottom: '15px', border: '1px 
 const lS = { fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b', display: 'block', marginBottom: '5px' };
 const navBtn = { 
   background: 'none', border: 'none', color: 'white', cursor: 'pointer', 
-  display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', fontWeight: '500' 
+  display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', fontWeight: '500',
+  transition: 'color 0.2s'
 };
