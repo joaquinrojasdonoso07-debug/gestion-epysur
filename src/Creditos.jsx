@@ -10,7 +10,6 @@ export default function Creditos() {
   const [editingId, setEditingId] = useState(null);
   const [tempAbonos, setTempAbonos] = useState([{ fecha: '', monto: '' }]);
 
-  // ESTADOS PARA EL BUSCADOR PREDICTIVO DENTRO DEL FORMULARIO
   const [busquedaClienteForm, setBusquedaClienteForm] = useState('');
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
 
@@ -36,7 +35,6 @@ export default function Creditos() {
     setEditingId(item.id);
     setFormData({ ...initialForm, ...item });
     
-    // Al editar, cargamos el nombre del cliente en el cuadro de búsqueda del formulario
     const clienteAsociado = clientes.find(c => c.id === item.cliente_id);
     setBusquedaClienteForm(clienteAsociado ? clienteAsociado.nombre_fantasia : '');
     
@@ -47,7 +45,11 @@ export default function Creditos() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, pagada) => {
+    if (!pagada) {
+      alert("No se puede eliminar un crédito pendiente.");
+      return;
+    }
     if (window.confirm("¿Seguro que quieres borrar este registro de crédito?")) {
       await supabase.from('creditos').delete().eq('id', id);
       fetchData();
@@ -61,22 +63,43 @@ export default function Creditos() {
       return;
     }
 
+    const maximoPermitido = Number(formData.valor_total || 0);
     const totalAbonado = tempAbonos.reduce((acc, curr) => acc + Number(curr.monto || 0), 0);
+    
+    // BLOQUEO DE SEGURIDAD: Evita que el abono supere el total del crédito
+    if (totalAbonado > maximoPermitido) {
+      alert(`¡Error! La suma de los abonos ($${totalAbonado.toLocaleString('es-CL')}) supera el monto total de la deuda ($${maximoPermitido.toLocaleString('es-CL')}). Por favor, corrige los montos.`);
+      return; // Detiene la ejecución para que no guarde en Supabase
+    }
+
+    // Auto-marcar como pagada si completó el total exacto del crédito
+    const estaPagadacompletamente = totalAbonado === maximoPermitido ? true : formData.pagada;
+    
     const payload = { 
-      ...formData, 
       cliente_id: parseInt(formData.cliente_id), 
+      fecha_deuda: formData.fecha_deuda || null,
+      productos_detalle: formData.productos_detalle || '',
+      valor_total: maximoPermitido,
       abono: totalAbonado, 
       abono_historial: JSON.stringify(tempAbonos),
-      fecha_deuda: formData.fecha_deuda || null
+      pagada: Boolean(estaPagadacompletamente),
+      observaciones: formData.observaciones || ''
     };
 
-    if (editingId) await supabase.from('creditos').update(payload).eq('id', editingId);
-    else await supabase.from('creditos').insert([payload]);
+    delete payload.clientes;
+    delete payload.id;
+
+    if (editingId) {
+      const { error } = await supabase.from('creditos').update(payload).eq('id', editingId);
+      if (error) alert("Error al actualizar crédito: " + error.message);
+    } else {
+      const { error } = await supabase.from('creditos').insert([payload]);
+      if (error) alert("Error al insertar nuevo crédito: " + error.message);
+    }
     
     setShowForm(false); setEditingId(null); setFormData(initialForm); setBusquedaClienteForm(''); fetchData();
   };
 
-  // Filtrar los clientes en tiempo real según lo que se escribe en el formulario
   const sugerenciasClientes = clientes.filter(c => 
     c.nombre_fantasia.toLowerCase().includes(busquedaClienteForm.toLowerCase())
   );
@@ -87,8 +110,8 @@ export default function Creditos() {
     <div style={{ width: '100%' }}>
       <style>{`
         .table-area { width: 100%; overflow-x: auto; background: white; }
-        .app-table { width: 100%; min-width: 3200px; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
-        .app-table th, .app-table td { border: 1.5pt solid black; padding: 10px; vertical-align: top; }
+        .app-table { width: 100%; min-width: 2200px; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
+        .app-table th, .app-table td { border: 1.5pt solid black; padding: 10px; vertical-align: top; word-wrap: break-word; }
         .app-table th { background: #991b1b; color: white; text-align: left; }
         
         .sugerencias-container { position: relative; width: 100%; }
@@ -119,7 +142,6 @@ export default function Creditos() {
             <h3 style={{textAlign:'center', color:'#991b1b', marginBottom:'15px'}}>GESTIÓN CRÉDITO</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               
-              {/* BUSCADOR PREDICTIVO EN LUGAR DEL SELECT CLÁSICO */}
               <div className="sugerencias-container">
                 <label style={lS}>Escribir Nombre del Cliente</label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -131,7 +153,6 @@ export default function Creditos() {
                     onChange={e => {
                       setBusquedaClienteForm(e.target.value);
                       setMostrarSugerencias(true);
-                      // Si borra el texto por completo, limpiamos el id seleccionado
                       if(!e.target.value) setFormData({...formData, cliente_id: ''});
                     }}
                     onFocus={() => setMostrarSugerencias(true)}
@@ -139,7 +160,6 @@ export default function Creditos() {
                   <Search size={18} style={{ position: 'absolute', right: '12px', color: '#94a3b8' }} />
                 </div>
                 
-                {/* Desplegable flotante de resultados sugeridos */}
                 {mostrarSugerencias && busquedaClienteForm && (
                   <ul className="sugerencias-lista">
                     {sugerenciasClientes.length > 0 ? (
@@ -163,9 +183,9 @@ export default function Creditos() {
                 )}
               </div>
 
-              <div><label style={lS}>Fecha Deuda (Opcional)</label><input type="date" style={iS} value={formData.fecha_deuda} onChange={e=>setFormData({...formData, fecha_deuda: e.target.value})} /></div>
-              <div><label style={lS}>Monto Total</label><input type="number" style={iS} value={formData.valor_total} onChange={e=>setFormData({...formData, valor_total: e.target.value})} required /></div>
-              <div><label style={lS}>Detalle Productos</label><textarea style={{...iS, height:'50px'}} value={formData.productos_detalle} onChange={e=>setFormData({...formData, productos_detalle: e.target.value})} /></div>
+              <div><label style={lS}>Fecha Deuda (Opcional)</label><input type="date" style={iS} value={formData.fecha_deuda || ''} onChange={e=>setFormData({...formData, fecha_deuda: e.target.value})} /></div>
+              <div><label style={lS}>Monto Total</label><input type="number" style={iS} value={formData.valor_total || ''} onChange={e=>setFormData({...formData, valor_total: e.target.value})} required /></div>
+              <div><label style={lS}>Detalle Productos</label><textarea style={{...iS, height:'50px'}} value={formData.productos_detalle || ''} onChange={e=>setFormData({...formData, productos_detalle: e.target.value})} /></div>
               
               <div style={{background:'#f1f5f9', padding:'10px', borderRadius:'8px', border:'1px solid #ddd'}}>
                 <label style={lS}>Abonos</label>
@@ -178,8 +198,8 @@ export default function Creditos() {
                 ))}
                 <button type="button" onClick={()=>setTempAbonos([...tempAbonos, {fecha: '', monto: ''}])} style={{fontSize:'0.8rem', color:'#1e40af', background:'none', border:'none', cursor:'pointer'}}>+ Agregar Pago</button>
               </div>
-              <div style={{display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={formData.pagada} onChange={e=>setFormData({...formData, pagada: e.target.checked})} /> <label>PAGADA</label></div>
-              <div><label style={lS}>Observaciones</label><textarea style={{...iS, height:'50px'}} value={formData.observaciones} onChange={e=>setFormData({...formData, observaciones: e.target.value})} /></div>
+              <div style={{display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={formData.pagada || false} onChange={e=>setFormData({...formData, pagada: e.target.checked})} /> <label>PAGADA</label></div>
+              <div><label style={lS}>Observaciones</label><textarea style={{...iS, height:'50px'}} value={formData.observaciones || ''} onChange={e=>setFormData({...formData, observaciones: e.target.value})} /></div>
             </div>
             <div style={{display:'flex', gap:'10px', marginTop:'20px'}}>
               <button type="submit" style={btnP}>GUARDAR</button>
@@ -195,10 +215,13 @@ export default function Creditos() {
             <tr>
               <th className="no-print" style={{width:'80px'}}>ACC</th>
               <th style={{width:'180px'}}>FANTASÍA</th>
+              <th className="no-print" style={{width:'140px'}}>FECHA INICIO</th>
+              <th className="no-print" style={{width:'300px'}}>DETALLE PRODUCTOS</th>
               <th style={{width:'220px'}}>ABONOS</th>
               <th style={{width:'110px'}}>TOTAL</th>
               <th style={{width:'110px'}}>SALDO</th>
-              <th style={{width:'200px'}}>OBSERVACIONES</th>
+              <th className="no-print" style={{width:'120px'}}>ESTADO</th>
+              <th style={{width:'250px'}}>OBSERVACIONES</th>
             </tr>
           </thead>
           <tbody>
@@ -207,13 +230,28 @@ export default function Creditos() {
                 <td className="no-print">
                    <div style={{display:'flex', gap:'5px'}}>
                       <button onClick={()=>handleEdit(item)} style={smEdit}><Edit3 size={14}/></button>
-                      <button onClick={()=>handleDelete(item.id)} style={smDel}><Trash2 size={14}/></button>
+                      <button 
+                        onClick={()=>handleDelete(item.id, item.pagada)} 
+                        disabled={!item.pagada}
+                        style={{
+                          ...smDel,
+                          background: item.pagada ? '#ef4444' : '#cbd5e1',
+                          cursor: item.pagada ? 'pointer' : 'not-allowed',
+                          opacity: item.pagada ? 1 : 0.6
+                        }}
+                        title={item.pagada ? "Eliminar crédito" : "No se puede eliminar un crédito pendiente"}
+                      >
+                        <Trash2 size={14}/>
+                      </button>
                    </div>
                 </td>
                 <td style={{fontWeight:'bold'}}>{item.clientes?.nombre_fantasia}</td>
+                <td className="no-print">{formatFechaChile(item.fecha_deuda)}</td>
+                <td className="no-print" style={{whiteSpace:'pre-wrap'}}>{item.productos_detalle}</td>
                 <td style={{padding:0}}>{JSON.parse(item.abono_historial || '[]').map((a,i)=><div key={i} style={{borderBottom:'1px solid black', padding:'4px'}}>{formatFechaChile(a.fecha)}: ${a.monto}</div>)}</td>
                 <td>${item.valor_total}</td>
-                <td style={{fontWeight:'bold', color:'red'}}>${item.valor_total - item.abono}</td>
+                <td style={{fontWeight:'bold', color: item.valor_total - item.abono > 0 ? 'red' : 'green'}}>${item.valor_total - item.abono}</td>
+                <td className="no-print" style={{fontWeight:'bold', color: item.pagada ? 'green' : 'orange'}}>{item.pagada ? 'PAGADA' : 'PENDIENTE'}</td>
                 <td>{item.observaciones}</td>
               </tr>
             ))}
@@ -229,7 +267,7 @@ const btnG = { padding:'12px', background:'#991b1b', color:'white', border:'none
 const btnP = { padding:'15px', background:'#991b1b', color:'white', border:'none', borderRadius:'8px', fontWeight:'bold', flex:1, cursor:'pointer' };
 const btnS = { padding:'15px', background:'#64748b', color:'white', border:'none', borderRadius:'8px', cursor:'pointer' };
 const smEdit = { background:'#3b82f6', color:'white', border:'none', padding:'6px', borderRadius:'4px', cursor:'pointer' };
-const smDel = { background:'#ef4444', color:'white', border:'none', padding:'6px', borderRadius:'4px', cursor:'pointer' };
+const smDel = { background:'#ef4444', color:'white', border:'none', padding:'6px', borderRadius:'4px' };
 const lS = { fontSize:'0.75rem', fontWeight:'bold', color:'#475569', display:'block', marginBottom:'4px', textTransform:'uppercase' };
 const modalOverlay = { position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', justifyContent:'center', padding:'20px', zIndex:100, overflowY:'auto' };
 const modalContent = { background:'white', padding:'30px', borderRadius:'15px', width:'100%', maxWidth:'600px', alignSelf:'flex-start' };
