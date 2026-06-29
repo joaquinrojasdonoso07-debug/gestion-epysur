@@ -20,26 +20,21 @@ export default function Cotizador() {
 
   const [totales, setTotales] = useState({ neto: 0, iva: 0, total: 0 });
 
-  // CONTADOR AUTOMÁTICO PERSISTENTE
   useEffect(() => {
     const hoy = new Date();
     const hoyString = hoy.toISOString().split('T')[0];
     setFecha(hoyString);
 
     const anioActual = hoy.getFullYear();
-    
-    // Intentamos recuperar el último número correlativo guardado en el navegador
     let ultimoCorrelativo = localStorage.getItem('epysur_correlativo_cotizacion');
     let nuevoCorrelativo = 1;
 
     if (ultimoCorrelativo) {
       nuevoCorrelativo = parseInt(ultimoCorrelativo, 10) + 1;
     } else {
-      // Si es la primera vez que se usa el sistema, lo inicializamos en 1
       localStorage.setItem('epysur_correlativo_cotizacion', '1');
     }
 
-    // Formateamos el número para que siempre tenga 3 dígitos (ej: 001, 012, 105)
     const numeroFormateado = String(nuevoCorrelativo).padStart(3, '0');
     setNumCotizacion(`${anioActual}-${numeroFormateado}`);
   }, []);
@@ -102,11 +97,8 @@ export default function Cotizador() {
     setItems(items.map(item => item.id === id ? { ...item, [campo]: valor } : item));
   };
 
-  // Función al presionar el botón de impresión que incrementa el contador de manera definitiva
   const ejecutarImpresion = () => {
     window.print();
-    
-    // Una vez mandado a imprimir o guardado en PDF, guardamos el correlativo actual como usado
     const correlativoActual = numCotizacion.split('-')[1];
     localStorage.setItem('epysur_correlativo_cotizacion', parseInt(correlativoActual, 10).toString());
   };
@@ -311,7 +303,7 @@ export default function Cotizador() {
                   placeholder="Generando..." 
                   style={{ textAlign: 'right', width: '140px', fontWeight: 'bold', color: '#A61F1F' }}
                   value={numCotizacion}
-                  readOnly // Campo automático no modificable para evitar errores humanos
+                  readOnly 
                 />
               </div>
             </div>
