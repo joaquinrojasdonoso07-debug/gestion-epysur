@@ -1,31 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Phone, Calendar, Clock, AlertCircle, CheckCircle, Search, MessageSquare } from 'lucide-react';
+import { Phone, Calendar, Clock, AlertCircle, CheckCircle, Search, MessageSquare, Car } from 'lucide-react';
 
 export default function Agenda() {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  // Fechas clave para los filtros de tiempo
   const hoyString = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     fetchLlamadas();
   }, []);
 
-  const fetchData = async () => {
-    // Helper para recargar datos de forma limpia
-    await fetchLlamadas();
-  };
-
   const fetchLlamadas = async () => {
     try {
       setLoading(true);
-      // Traemos los clientes que tengan agendada una próxima llamada
       const { data, error } = await supabase
         .from('clientes')
-        .select('id, nombre_fantasia, responsable, telefono, proximo_contacto, ultimo_contacto, observaciones')
+        .select('id, nombre_fantasia, responsable, telefono, direccion, comuna, proximo_contacto, observaciones')
         .not('proximo_contacto', 'is', null)
         .order('proximo_contacto', { ascending: true });
 
@@ -38,7 +31,6 @@ export default function Agenda() {
     }
   };
 
-  // Marcar una llamada como realizada (mueve la fecha actual al último contacto y despeja la próxima llamada)
   const marcarComoHecho = async (cliente) => {
     if (!window.confirm(`¿Confirmas que realizaste el contacto con ${cliente.nombre_fantasia}?`)) return;
 
@@ -47,7 +39,7 @@ export default function Agenda() {
         .from('clientes')
         .update({
           ultimo_contacto: hoyString,
-          proximo_contacto: null // Queda libre hasta que se agende otra en la cartera
+          proximo_contacto: null
         })
         .eq('id', cliente.id);
 
@@ -59,13 +51,11 @@ export default function Agenda() {
     }
   };
 
-  // Filtrado por buscador general (Nombre o Responsable)
   const filtrados = clientes.filter(c => 
     (c.nombre_fantasia || '').toLowerCase().includes(search.toLowerCase()) ||
     (c.responsable || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  // Clasificación de llamadas basadas en la fecha actual
   const atrasadas = filtrados.filter(c => c.proximo_contacto < hoyString);
   const paraHoy = filtrados.filter(c => c.proximo_contacto === hoyString);
   const futuras = filtrados.filter(c => c.proximo_contacto > hoyString);
@@ -79,10 +69,9 @@ export default function Agenda() {
   return (
     <div style={{ fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto', padding: '10px' }}>
       <h2 style={{ color: '#1e40af', borderBottom: '2px solid #1e40af', paddingBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <Calendar size={24} /> AGENDA Y SEGUIMIENTO DE LLAMADAS
+        <Calendar size={24} /> AGENDA Y SEGUIMIENTO EN TERRENO
       </h2>
 
-      {/* FILTRO DE BÚSQUEDA */}
       <div style={{ marginBottom: '20px', position: 'relative', display: 'flex', alignItems: 'center', maxWidth: '400px' }}>
         <input 
           type="text" 
@@ -99,11 +88,10 @@ export default function Agenda() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
           
-          {/* 1. SECCIÓN: CONTACTOS ATRASADOS */}
           {atrasadas.length > 0 && (
             <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '15px' }}>
               <h3 style={{ margin: '0 0 12px 0', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11pt' }}>
-                <AlertCircle size={18} /> LLAMADAS PENDIENTES (ATRASADAS)
+                <AlertCircle size={18} /> EN RUTA / LLAMADAS ATRASADAS
               </h3>
               <div style={gridS}>
                 {atrasadas.map(c => <TarjetaCliente key={c.id} c={c} colorHeader="#ef4444" onCheck={() => marcarComoHecho(c)} formatFecha={formatFechaChile} />)}
@@ -111,13 +99,12 @@ export default function Agenda() {
             </div>
           )}
 
-          {/* 2. SECCIÓN: PARA HOY */}
           <div style={{ background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '8px', padding: '15px' }}>
             <h3 style={{ margin: '0 0 12px 0', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11pt' }}>
-              <Clock size={18} /> HOY — CONTACTOS PROGRAMADOS
+              <Clock size={18} /> HOY — HOJA DE RUTA Y CONTACTOS
             </h3>
             {paraHoy.length === 0 ? (
-              <p style={{ color: '#64748b', fontSize: '10pt', margin: 0 }}>No tienes llamadas programadas para el día de hoy.</p>
+              <p style={{ color: '#64748b', fontSize: '10pt', margin: 0 }}>No tienes gestiones programadas para hoy.</p>
             ) : (
               <div style={gridS}>
                 {paraHoy.map(c => <TarjetaCliente key={c.id} c={c} colorHeader="#3b82f6" onCheck={() => marcarComoHecho(c)} formatFecha={formatFechaChile} />)}
@@ -125,13 +112,12 @@ export default function Agenda() {
             )}
           </div>
 
-          {/* 3. SECCIÓN: PRÓXIMAS LLAMADAS */}
           <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '15px' }}>
             <h3 style={{ margin: '0 0 12px 0', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11pt' }}>
               <Calendar size={18} /> PRÓXIMOS DÍAS
             </h3>
             {futuras.length === 0 ? (
-              <p style={{ color: '#64748b', fontSize: '10pt', margin: 0 }}>No hay llamadas agendadas para las siguientes fechas.</p>
+              <p style={{ color: '#64748b', fontSize: '10pt', margin: 0 }}>No hay visitas agendadas para las siguientes fechas.</p>
             ) : (
               <div style={gridS}>
                 {futuras.map(c => <TarjetaCliente key={c.id} c={c} colorHeader="#64748b" onCheck={() => marcarComoHecho(c)} formatFecha={formatFechaChile} />)}
@@ -145,10 +131,14 @@ export default function Agenda() {
   );
 }
 
-// Sub-componente de Tarjeta para ordenar visualmente cada cliente
 function TarjetaCliente({ c, colorHeader, onCheck, formatFecha }) {
-  // Limpieza del número para enlace de WhatsApp
   const numLimpio = c.telefono ? c.telefono.replace(/\s+/g, '').replace('+', '') : '';
+  
+  const direccionDestino = `${c.direccion || ''} ${c.comuna || ''} Chile`.trim();
+  const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(direccionDestino)}&navigate=yes`;
+  
+  // Modificado con protocolo nativo whatsapp:// para forzar apertura en la app de Business del celular
+  const whatsappUrl = `whatsapp://send?phone=${numLimpio}`;
 
   return (
     <div style={{ background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -159,39 +149,54 @@ function TarjetaCliente({ c, colorHeader, onCheck, formatFecha }) {
       <div style={{ padding: '12px', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>{c.nombre_fantasia}</h4>
         
-        {c.telefono ? (
-          <p style={{ margin: 0, fontSize: '9.5pt', color: '#475569', display: 'flex', alignItems: 'center', gap: '5px' }}>
+        {c.direccion && (
+          <p style={{ margin: 0, fontSize: '9.5pt', color: '#334155', fontWeight: '500' }}>
+            📍 {c.direccion} {c.comuna ? `, ${c.comuna}` : ''}
+          </p>
+        )}
+
+        {c.telefono && (
+          <p style={{ margin: 0, fontSize: '9.5pt', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px' }}>
             <Phone size={14} style={{ color: '#1e40af' }} /> {c.telefono}
           </p>
-        ) : (
-          <p style={{ margin: 0, fontSize: '9.5pt', color: '#94a3b8', fontStyle: 'italic' }}>Sin teléfono registrado</p>
         )}
 
         {c.observaciones && (
-          <div style={{ backgroundColor: '#f1f5f9', padding: '6px 8px', borderRadius: '4px', fontSize: '9pt', color: '#334155', fontStyle: 'italic', marginTop: '4px' }}>
+          <div style={{ backgroundColor: '#f1f5f9', padding: '6px 8px', borderRadius: '4px', fontSize: '9pt', color: '#475569', fontStyle: 'italic', marginTop: '4px' }}>
             "{c.observaciones}"
           </div>
         )}
 
-        {/* ACCIONES DIRECTAS EN LA TARJETA */}
-        <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
-          {numLimpio && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+          
+          {c.direccion && (
             <a 
-              href={`https://wa.me/${numLimpio}`} 
+              href={wazeUrl} 
               target="_blank" 
               rel="noopener noreferrer" 
+              style={{ ...actionCardS, backgroundColor: '#33ccff', color: 'black' }}
+              title="Abrir en Waze"
+            >
+              <Car size={15} /> Navegar Waze
+            </a>
+          )}
+
+          {numLimpio && (
+            <a 
+              href={whatsappUrl} 
               style={{ ...actionCardS, backgroundColor: '#25d366', color: 'white' }}
-              title="Escribir al WhatsApp"
+              title="Escribir al WhatsApp Business"
             >
               <MessageSquare size={15} /> WhatsApp
             </a>
           )}
+
           <button 
             type="button" 
             onClick={onCheck} 
-            style={{ ...actionCardS, backgroundColor: '#16a34a', color: 'white', flex: 1 }}
+            style={{ ...actionCardS, backgroundColor: '#16a34a', color: 'white', flex: '1 1 100%', marginTop: '4px' }}
           >
-            <CheckCircle size={15} /> Contactado
+            <CheckCircle size={15} /> Gestión Realizada
           </button>
         </div>
       </div>
@@ -199,8 +204,6 @@ function TarjetaCliente({ c, colorHeader, onCheck, formatFecha }) {
   );
 }
 
-// Estilos de objetos para la interfaz
 const iS = { width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box', fontSize: '10pt' };
-const lS = { fontSize: '0.75rem', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '4px' };
 const gridS = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' };
 const actionCardS = { border: 'none', padding: '8px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '9pt', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', textDecoration: 'none' };

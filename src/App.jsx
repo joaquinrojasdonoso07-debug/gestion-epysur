@@ -4,15 +4,10 @@ import Creditos from './Creditos';
 import Cotizador from './Cotizador';
 import Inventario from './Inventario';
 import Agenda from './Agenda'; 
-import RutasTerreno from './RutasTerreno'; // Importa el nuevo optimizador de visitas
-import { supabase } from './supabaseClient';
-import { Printer, Edit3, Trash2, XCircle, Search } from 'lucide-react';
+import RutasTerreno from './RutasTerreno'; 
 
 export default function App() {
-  const [search, setSearch] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [view, setView] = useState('inicio'); // Control de pestañas del ERP
+  const [view, setView] = useState('inicio'); 
 
   // Credenciales de login fijadas
   const [username, setUsername] = useState('');
@@ -58,7 +53,7 @@ export default function App() {
           position: sticky; top: 0; z-index: 50;
         }
         .buttons-container-epysur { display: flex; gap: 1.5rem; }
-        .nav-btn-epysur { background: none; border: none; color: white; font-weight: 600; cursor: pointer; font-size: 10.5pt; padding: 6px 12px; borderRadius: '6px' }
+        .nav-btn-epysur { background: none; border: none; color: white; font-weight: 600; cursor: pointer; font-size: 10.5pt; padding: 6px 12px; border-radius: 6px; }
         .nav-btn-epysur:hover { background: rgba(255,255,255,0.1); }
         
         @media (max-width: 640px) {
@@ -83,17 +78,14 @@ export default function App() {
       <main style={{ padding: '2rem' }}>
         {view === 'inicio' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-            {/* NUEVA SECCIÓN INDEPENDIENTE PARA TRABAJO EN TERRENO CON FILTRO POR COMUNA */}
             <RutasTerreno />
-            
-            {/* TU AGENDA ORIGINAL EXCLUSIVA PARA GESTIÓN DE LLAMADAS */}
             <Agenda />
           </div>
         )}
 
         {view === 'cartera' && <Cartera />}
         {view === 'creditos' && <Creditos />}
-        {view === 'cotizador' && <IdentityView><Cotizador /></IdentityView> || <Cotizador />}
+        {view === 'cotizador' && <Cotizador />}
         {view === 'inventario' && <Inventario />}
       </main>
     </div>
