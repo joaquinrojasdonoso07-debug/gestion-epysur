@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import Cartera from './Cartera';
 import Creditos from './Creditos';
 import Cotizador from './Cotizador';
+import Inventario from './Inventario';
 import Agenda from './Agenda';
-import { Users, CreditCard, LogOut, FileText, Home, Calendar } from 'lucide-react';
+import { Users, CreditCard, LogOut, FileText, Home, Package } from 'lucide-react';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [view, setView] = useState('inicio'); // Cambiado a 'inicio' por defecto
+  const [view, setView] = useState('inicio');
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -17,7 +18,7 @@ export default function App() {
     
     if (userLower === 'epysur' && password === 'rodoepysur') {
       setIsLoggedIn(true);
-      setView('inicio'); // Te manda directo al Dashboard
+      setView('inicio');
     } else {
       alert('Usuario o contraseña incorrectos');
     }
@@ -86,7 +87,7 @@ export default function App() {
         }
         .grid-accesos-rapidos {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
           gap: 15px;
           margin-bottom: 25px;
         }
@@ -141,6 +142,9 @@ export default function App() {
           <button onClick={() => setView('cotizador')} className="nav-btn-epysur" style={{ ...navBtn, fontWeight: view === 'cotizador' ? 'bold' : '500', color: view === 'cotizador' ? '#fef08a' : 'white' }}>
             <FileText size={18} /> Cotizador
           </button>
+          <button onClick={() => setView('inventario')} className="nav-btn-epysur" style={{ ...navBtn, fontWeight: view === 'inventario' ? 'bold' : '500', color: view === 'inventario' ? '#fef08a' : 'white' }}>
+            <Package size={18} /> Inventario
+          </button>
           <button onClick={() => setIsLoggedIn(false)} className="nav-btn-epysur" style={{ ...navBtn, color: '#fca5a5' }}>
             <LogOut size={18} /> Salir
           </button>
@@ -155,27 +159,34 @@ export default function App() {
               <div className="card-acceso" onClick={() => setView('cartera')}>
                 <div style={{ padding: '12px', background: '#eff6ff', color: '#1e40af', borderRadius: '8px' }}><Users size={24} /></div>
                 <div>
-                  <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>Cartera de Clientes</h4>
-                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Fichas y ubicaciones</span>
+                  <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>Cartera</h4>
+                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Clientes y fichas</span>
                 </div>
               </div>
               <div className="card-acceso" onClick={() => setView('creditos')}>
                 <div style={{ padding: '12px', background: '#fef2f2', color: '#991b1b', borderRadius: '8px' }}><CreditCard size={24} /></div>
                 <div>
-                  <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>Control Financiero</h4>
-                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Créditos y abonos</span>
+                  <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>Créditos</h4>
+                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Saldos y abonos</span>
                 </div>
               </div>
               <div className="card-acceso" onClick={() => setView('cotizador')}>
                 <div style={{ padding: '12px', background: '#f0fdf4', color: '#16a34a', borderRadius: '8px' }}><FileText size={24} /></div>
                 <div>
                   <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>Cotizador</h4>
-                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Generar presupuestos</span>
+                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Presupuestos</span>
+                </div>
+              </div>
+              <div className="card-acceso" onClick={() => setView('inventario')}>
+                <div style={{ padding: '12px', background: '#fef3c7', color: '#d97706', borderRadius: '8px' }}><Package size={24} /></div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>Inventario</h4>
+                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Catálogo de ítems</span>
                 </div>
               </div>
             </div>
 
-            {/* INTEGRACIÓN DE LA AGENDA COMO CUERPO CENTRAL */}
+            {/* AGENDA CENTRAL */}
             <Agenda />
           </div>
         )}
@@ -183,6 +194,7 @@ export default function App() {
         {view === 'cartera' && <Cartera />}
         {view === 'creditos' && <Creditos />}
         {view === 'cotizador' && <Cotizador />}
+        {view === 'inventario' && <Inventario />}
       </main>
     </div>
   );
