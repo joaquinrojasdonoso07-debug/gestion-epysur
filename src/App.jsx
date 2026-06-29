@@ -3,65 +3,47 @@ import Cartera from './Cartera';
 import Creditos from './Creditos';
 import Cotizador from './Cotizador';
 import Inventario from './Inventario';
-import Agenda from './Agenda';
-import { Users, CreditCard, LogOut, FileText, Home, Package } from 'lucide-react';
+import Agenda from './Agenda'; 
+import RutasTerreno from './RutasTerreno'; // Importa el nuevo optimizador de visitas
+import { supabase } from './supabaseClient';
+import { Printer, Edit3, Trash2, XCircle, Search } from 'lucide-react';
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [search, setSearch] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [view, setView] = useState('inicio'); // Control de pestañas del ERP
+
+  // Credenciales de login fijadas
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [view, setView] = useState('inicio');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleLogin = (e) => {
     e.preventDefault();
-    const userLower = username.toLowerCase();
-    
-    if (userLower === 'epysur' && password === 'rodoepysur') {
+    if ((username.toLowerCase() === 'epysur') && password === 'rodoepysur') {
       setIsLoggedIn(true);
-      setView('inicio');
     } else {
-      alert('Usuario o contraseña incorrectos');
+      alert('Credenciales incorrectas. Inténtalo de nuevo.');
     }
   };
 
   if (!isLoggedIn) {
     return (
-      <div style={{ 
-        height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-        backgroundColor: '#f1f5f9', fontFamily: 'sans-serif' 
-      }}>
-        <form onSubmit={handleLogin} style={{ 
-          backgroundColor: 'white', padding: '2.5rem', borderRadius: '15px', 
-          boxShadow: '0 10px 25px rgba(0,0,0,0.1)', width: '100%', maxWidth: '350px' 
-        }}>
-          <h2 style={{ textAlign: 'center', color: '#1e40af', marginBottom: '1.5rem' }}>EPYSUR ERP</h2>
-          
-          <label style={lS}>USUARIO</label>
-          <input 
-            type="text" 
-            style={iS} 
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)} 
-            placeholder="Ingrese usuario"
-            required 
-          />
-          
-          <label style={lS}>CONTRASEÑA</label>
-          <input 
-            type="password" 
-            style={iS} 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            placeholder="Ingrese contraseña"
-            required 
-          />
-          
-          <button type="submit" style={{ 
-            width: '100%', padding: '12px', backgroundColor: '#1e40af', color: 'white', 
-            border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' 
-          }}>
-            INGRESAR
-          </button>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f1f5f9', fontFamily: 'sans-serif' }}>
+        <form onSubmit={handleLogin} style={{ background: 'white', padding: '30px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px' }}>
+          <h2 style={{ textAlign: 'center', color: '#1e40af', marginBottom: '20px' }}>EPYSUR ERP</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '5px' }}>USUARIO</label>
+              <input type="text" placeholder="epysur" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '8px', boxSizing: 'border-box' }} value={username} onChange={e => setUsername(e.target.value)} required />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '5px' }}>CONTRASEÑA</label>
+              <input type="password" placeholder="••••••••" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '8px', boxSizing: 'border-box' }} value={password} onChange={e => setPassword(e.target.value)} required />
+            </div>
+            <button type="submit" style={{ width: '100%', padding: '12px', background: '#1e40af', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}>INGRESAR</button>
+          </div>
         </form>
       </div>
     );
@@ -71,139 +53,49 @@ export default function App() {
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif' }}>
       <style>{`
         .navbar-epysur {
-          background-color: #1e40af;
-          color: white;
-          padding: 1rem 2rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          position: sticky;
-          top: 0;
-          z-index: 50;
+          background-color: #1e40af; color: white; padding: 1rem 2rem;
+          display: flex; justify-content: space-between; align-items: center;
+          position: sticky; top: 0; z-index: 50;
         }
-        .buttons-container-epysur {
-          display: flex;
-          gap: 1.5rem;
-        }
-        .grid-accesos-rapidos {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 15px;
-          margin-bottom: 25px;
-        }
-        .card-acceso {
-          background: white;
-          padding: 20px;
-          border-radius: 10px;
-          border: 1px solid #e2e8f0;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .card-acceso:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
+        .buttons-container-epysur { display: flex; gap: 1.5rem; }
+        .nav-btn-epysur { background: none; border: none; color: white; font-weight: 600; cursor: pointer; font-size: 10.5pt; padding: 6px 12px; borderRadius: '6px' }
+        .nav-btn-epysur:hover { background: rgba(255,255,255,0.1); }
         
         @media (max-width: 640px) {
-          .navbar-epysur {
-            flex-direction: column !important;
-            gap: 10px !important;
-            padding: 1rem !important;
-            text-align: center;
-          }
-          .buttons-container-epysur {
-            width: 100% !important;
-            justify-content: space-around !important;
-            gap: 5px !important;
-            flex-wrap: wrap !important;
-          }
-          .nav-btn-epysur {
-            font-size: 0.85rem !important;
-            padding: 6px 4px !important;
-          }
+          .navbar-epysur { flex-direction: column; gap: 10px; padding: 1rem; text-align: center; }
+          .buttons-container-epysur { width: 100%; justify-content: space-around; flex-wrap: wrap; gap: 5px; }
+          .nav-btn-epysur { font-size: 0.85rem; padding: 6px 4px; }
         }
       `}</style>
 
       <nav className="navbar-epysur no-print">
         <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold' }}>EPYSUR ERP</h1>
         <div className="buttons-container-epysur">
-          <button onClick={() => setView('inicio')} className="nav-btn-epysur" style={{ ...navBtn, fontWeight: view === 'inicio' ? 'bold' : '500', color: view === 'inicio' ? '#fef08a' : 'white' }}>
-            <Home size={18} /> Inicio
-          </button>
-          <button onClick={() => setView('cartera')} className="nav-btn-epysur" style={{ ...navBtn, fontWeight: view === 'cartera' ? 'bold' : '500', color: view === 'cartera' ? '#fef08a' : 'white' }}>
-            <Users size={18} /> Cartera
-          </button>
-          <button onClick={() => setView('creditos')} className="nav-btn-epysur" style={{ ...navBtn, fontWeight: view === 'creditos' ? 'bold' : '500', color: view === 'creditos' ? '#fef08a' : 'white' }}>
-            <CreditCard size={18} /> Créditos
-          </button>
-          <button onClick={() => setView('cotizador')} className="nav-btn-epysur" style={{ ...navBtn, fontWeight: view === 'cotizador' ? 'bold' : '500', color: view === 'cotizador' ? '#fef08a' : 'white' }}>
-            <FileText size={18} /> Cotizador
-          </button>
-          <button onClick={() => setView('inventario')} className="nav-btn-epysur" style={{ ...navBtn, fontWeight: view === 'inventario' ? 'bold' : '500', color: view === 'inventario' ? '#fef08a' : 'white' }}>
-            <Package size={18} /> Inventario
-          </button>
-          <button onClick={() => setIsLoggedIn(false)} className="nav-btn-epysur" style={{ ...navBtn, color: '#fca5a5' }}>
-            <LogOut size={18} /> Salir
-          </button>
+          <button onClick={() => setView('inicio')} className="nav-btn-epysur" style={{ color: view === 'inicio' ? '#fef08a' : 'white' }}>Inicio</button>
+          <button onClick={() => setView('cartera')} className="nav-btn-epysur" style={{ color: view === 'cartera' ? '#fef08a' : 'white' }}>Cartera</button>
+          <button onClick={() => setView('creditos')} className="nav-btn-epysur" style={{ color: view === 'creditos' ? '#fef08a' : 'white' }}>Créditos</button>
+          <button onClick={() => setView('cotizador')} className="nav-btn-epysur" style={{ color: view === 'cotizador' ? '#fef08a' : 'white' }}>Cotizador</button>
+          <button onClick={() => setView('inventario')} className="nav-btn-epysur" style={{ color: view === 'inventario' ? '#fef08a' : 'white' }}>Inventario</button>
+          <button onClick={() => setIsLoggedIn(false)} className="nav-btn-epysur" style={{ color: '#ef4444' }}>Salir</button>
         </div>
       </nav>
 
       <main style={{ padding: '2rem' }}>
         {view === 'inicio' && (
-          <div>
-            {/* PANEL DE ACCESOS RÁPIDOS SUPERIOR */}
-            <div className="grid-accesos-rapidos">
-              <div className="card-acceso" onClick={() => setView('cartera')}>
-                <div style={{ padding: '12px', background: '#eff6ff', color: '#1e40af', borderRadius: '8px' }}><Users size={24} /></div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>Cartera</h4>
-                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Clientes y fichas</span>
-                </div>
-              </div>
-              <div className="card-acceso" onClick={() => setView('creditos')}>
-                <div style={{ padding: '12px', background: '#fef2f2', color: '#991b1b', borderRadius: '8px' }}><CreditCard size={24} /></div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>Créditos</h4>
-                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Saldos y abonos</span>
-                </div>
-              </div>
-              <div className="card-acceso" onClick={() => setView('cotizador')}>
-                <div style={{ padding: '12px', background: '#f0fdf4', color: '#16a34a', borderRadius: '8px' }}><FileText size={24} /></div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>Cotizador</h4>
-                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Presupuestos</span>
-                </div>
-              </div>
-              <div className="card-acceso" onClick={() => setView('inventario')}>
-                <div style={{ padding: '12px', background: '#fef3c7', color: '#d97706', borderRadius: '8px' }}><Package size={24} /></div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>Inventario</h4>
-                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Catálogo de ítems</span>
-                </div>
-              </div>
-            </div>
-
-            {/* AGENDA CENTRAL */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+            {/* NUEVA SECCIÓN INDEPENDIENTE PARA TRABAJO EN TERRENO CON FILTRO POR COMUNA */}
+            <RutasTerreno />
+            
+            {/* TU AGENDA ORIGINAL EXCLUSIVA PARA GESTIÓN DE LLAMADAS */}
             <Agenda />
           </div>
         )}
 
         {view === 'cartera' && <Cartera />}
         {view === 'creditos' && <Creditos />}
-        {view === 'cotizador' && <Cotizador />}
+        {view === 'cotizador' && <IdentityView><Cotizador /></IdentityView> || <Cotizador />}
         {view === 'inventario' && <Inventario />}
       </main>
     </div>
   );
 }
-
-const iS = { width: '100%', padding: '12px', marginBottom: '15px', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box' };
-const lS = { fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b', display: 'block', marginBottom: '5px' };
-const navBtn = { 
-  background: 'none', border: 'none', color: 'white', cursor: 'pointer', 
-  display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', fontWeight: '500',
-  transition: 'color 0.2s'
-};
