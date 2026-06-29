@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import Cartera from './Cartera';
 import Creditos from './Creditos';
 import Cotizador from './Cotizador';
-import { Users, CreditCard, LogOut, FileText } from 'lucide-react';
+import Agenda from './Agenda';
+import { Users, CreditCard, LogOut, FileText, Home, Calendar } from 'lucide-react';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [view, setView] = useState('cartera');
+  const [view, setView] = useState('inicio'); // Cambiado a 'inicio' por defecto
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -16,6 +17,7 @@ export default function App() {
     
     if (userLower === 'epysur' && password === 'rodoepysur') {
       setIsLoggedIn(true);
+      setView('inicio'); // Te manda directo al Dashboard
     } else {
       alert('Usuario o contraseña incorrectos');
     }
@@ -49,6 +51,7 @@ export default function App() {
             style={iS} 
             value={password} 
             onChange={(e) => setPassword(e.target.value)} 
+            placeholder="Ingrese contraseña"
             required 
           />
           
@@ -65,7 +68,6 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif' }}>
-      {/* Añadimos estilos CSS nativos para detectar celulares automáticamente */}
       <style>{`
         .navbar-epysur {
           background-color: #1e40af;
@@ -82,8 +84,28 @@ export default function App() {
           display: flex;
           gap: 1.5rem;
         }
+        .grid-accesos-rapidos {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 15px;
+          margin-bottom: 25px;
+        }
+        .card-acceso {
+          background: white;
+          padding: 20px;
+          border-radius: 10px;
+          border: 1px solid #e2e8f0;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card-acceso:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
         
-        /* CUANDO SEA CELULAR (PANTALLAS CHICAS) */
         @media (max-width: 640px) {
           .navbar-epysur {
             flex-direction: column !important;
@@ -95,10 +117,10 @@ export default function App() {
             width: 100% !important;
             justify-content: space-around !important;
             gap: 5px !important;
-            flex-wrap: wrap !important; /* Permite que los botones bajen si les falta espacio */
+            flex-wrap: wrap !important;
           }
           .nav-btn-epysur {
-            font-size: 0.85rem !important; /* Achica un pelo el texto en el teléfono para que quepan todos */
+            font-size: 0.85rem !important;
             padding: 6px 4px !important;
           }
         }
@@ -107,6 +129,9 @@ export default function App() {
       <nav className="navbar-epysur no-print">
         <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold' }}>EPYSUR ERP</h1>
         <div className="buttons-container-epysur">
+          <button onClick={() => setView('inicio')} className="nav-btn-epysur" style={{ ...navBtn, fontWeight: view === 'inicio' ? 'bold' : '500', color: view === 'inicio' ? '#fef08a' : 'white' }}>
+            <Home size={18} /> Inicio
+          </button>
           <button onClick={() => setView('cartera')} className="nav-btn-epysur" style={{ ...navBtn, fontWeight: view === 'cartera' ? 'bold' : '500', color: view === 'cartera' ? '#fef08a' : 'white' }}>
             <Users size={18} /> Cartera
           </button>
@@ -123,6 +148,38 @@ export default function App() {
       </nav>
 
       <main style={{ padding: '2rem' }}>
+        {view === 'inicio' && (
+          <div>
+            {/* PANEL DE ACCESOS RÁPIDOS SUPERIOR */}
+            <div className="grid-accesos-rapidos">
+              <div className="card-acceso" onClick={() => setView('cartera')}>
+                <div style={{ padding: '12px', background: '#eff6ff', color: '#1e40af', borderRadius: '8px' }}><Users size={24} /></div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>Cartera de Clientes</h4>
+                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Fichas y ubicaciones</span>
+                </div>
+              </div>
+              <div className="card-acceso" onClick={() => setView('creditos')}>
+                <div style={{ padding: '12px', background: '#fef2f2', color: '#991b1b', borderRadius: '8px' }}><CreditCard size={24} /></div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>Control Financiero</h4>
+                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Créditos y abonos</span>
+                </div>
+              </div>
+              <div className="card-acceso" onClick={() => setView('cotizador')}>
+                <div style={{ padding: '12px', background: '#f0fdf4', color: '#16a34a', borderRadius: '8px' }}><FileText size={24} /></div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '11pt', color: '#1e293b' }}>Cotizador</h4>
+                  <span style={{ fontSize: '8.5pt', color: '#64748b' }}>Generar presupuestos</span>
+                </div>
+              </div>
+            </div>
+
+            {/* INTEGRACIÓN DE LA AGENDA COMO CUERPO CENTRAL */}
+            <Agenda />
+          </div>
+        )}
+
         {view === 'cartera' && <Cartera />}
         {view === 'creditos' && <Creditos />}
         {view === 'cotizador' && <Cotizador />}

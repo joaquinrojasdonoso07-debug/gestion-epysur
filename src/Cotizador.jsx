@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import logoImg from './logo.png';
+import { supabase } from './supabaseClient'; // Conexión a tu Supabase
 
 export default function Cotizador() {
   const [numCotizacion, setNumCotizacion] = useState('');
@@ -14,12 +15,16 @@ export default function Cotizador() {
   const [observaciones, setObservaciones] = useState('');
   const [validez, setValidez] = useState('15 días');
 
+  // Catálogo completo traído de la base de datos
+  const [catalogo, setCatalogo] = useState([]);
+
   const [items, setItems] = useState([
-    { id: Date.now(), descripcion: '', cantidad: 1, precio: 0 }
+    { id: Date.now(), descripcion: '', cantidad: 1, precio: 0, mostrarSugerencias: false }
   ]);
 
   const [totales, setTotales] = useState({ neto: 0, iva: 0, total: 0 });
 
+  // Cargar catálogo de inventario y configurar contador automático
   useEffect(() => {
     const hoy = new Date();
     const hoyString = hoy.toISOString().split('T')[0];
@@ -37,7 +42,23 @@ export default function Cotizador() {
 
     const numeroFormateado = String(nuevoCorrelativo).padStart(3, '0');
     setNumCotizacion(`${anioActual}-${numeroFormateado}`);
+
+    // Traer los productos desde Supabase
+    cargarCatalogo();
   }, []);
+
+  const cargarCatalogo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('inventario')
+        .select('codigo, descripcion, precio_neto')
+        .order('descripcion', { ascending: true });
+      if (error) throw error;
+      setCatalogo(data || []);
+    } catch (error) {
+      console.error('Error cargando catálogo para autocompletar:', error.message);
+    }
+  };
 
   useEffect(() => {
     let netoAcumulado = 0;
@@ -82,19 +103,44 @@ export default function Cotizador() {
   };
 
   const agregarFila = () => {
-    setItems([...items, { id: Date.now(), descripcion: '', cantidad: 1, precio: 0 }]);
+    setItems([...items, { id: Date.now(), descripcion: '', cantidad: 1, precio: 0, mostrarSugerencias: false }]);
   };
 
   const eliminarFila = (id) => {
     if (items.length === 1) {
-      setItems([{ id: Date.now(), descripcion: '', cantidad: 1, precio: 0 }]);
+      setItems([{ id: Date.now(), descripcion: '', cantidad: 1, precio: 0, mostrarSugerencias: false }]);
     } else {
       setItems(items.filter(item => item.id !== id));
     }
   };
 
   const handleItemChange = (id, campo, valor) => {
-    setItems(items.map(item => item.id === id ? { ...item, [campo]: valor } : item));
+    setItems(items.map(item => {
+      if (item.id === id) {
+        const actualizado = { ...item, [campo]: valor };
+        // Si cambia la descripción, abrimos el menú de sugerencias inteligente
+        if (campo === 'descripcion') {
+          actualizado.mostrarSugerencias = valor.length > 0;
+        }
+        return actualizado;
+      }
+      return item;
+    }));
+  };
+
+  // Al seleccionar un producto del buscador automático
+  const seleccionarProducto = (id, prod) => {
+    setItems(items.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          descripcion: prod.descripcion,
+          precio: prod.precio_neto,
+          mostrarSugerencias: false
+        };
+      }
+      return item;
+    }));
   };
 
   const ejecutarImpresion = () => {
@@ -165,8 +211,17 @@ export default function Cotizador() {
         .table-responsive-cot { width: 100%; margin-top: 10pt; }
         .tabla-items-cot { width: 100%; border-collapse: collapse; }
         .tabla-items-cot th { background: #A61F1F; color: white; padding: 8pt; font-size: 9pt; text-align: left; border: 1px solid #A61F1F; }
-        .tabla-items-cot td { padding: 6pt 8pt; border-bottom: 1px solid #e2e8f0; }
+        .tabla-items-cot td { padding: 6pt 8pt; border-bottom: 1px solid #e2e8f0; position: relative; }
         .btn-delete-cot { background: #ef4444; color: white; border: none; padding: 4pt 7pt; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 9pt; }
+        
+        /* Contenedor flotante de sugerencias */
+        .sugerencias-lista {
+          position: absolute; left: 8pt; right: 8pt; top: 32pt; background: white; border: 1px solid #cbd5e1; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 0; margin: 0; list-style: none;
+        }
+        .sugerencia-item {
+          padding: 8px 12px; cursor: pointer; font-size: 9.5pt; text-align: left; color: #334155; border-bottom: 1px solid #f1f5f9;
+        }
+        .sugerencia-item:hover { background: #f1f5f9; color: #1e40af; font-weight: bold; }
         
         .summary-cot { 
           margin-left: auto !important; 
@@ -186,7 +241,7 @@ export default function Cotizador() {
         .btn-print-cot { background: #A61F1F; color: white; padding: 12pt 35pt; border: none; border-radius: 50pt; font-weight: bold; cursor: pointer; box-shadow: 0 4pt 15pt rgba(0,0,0,0.3); }
 
         @media print {
-          nav.no-print, .no-print { display: none !important; }
+          nav.no-print, .no-print, .sugerencias-lista { display: none !important; }
           .cotizador-contenedor-padre { background: white !important; padding: 0 !important; margin: 0 !important; }
           body { background: white; color: black; }
           
@@ -359,7 +414,7 @@ export default function Cotizador() {
           </div>
         </div>
 
-        {/* TABLA DE PRODUCTOS */}
+        {/* TABLA DE PRODUCTOS CON BUSCADOR INTELIGENTE */}
         <div className="table-responsive-cot">
           <table className="tabla-items-cot">
             <thead>
@@ -372,41 +427,65 @@ export default function Cotizador() {
               </tr>
             </thead>
             <tbody>
-              {items.map(item => (
-                <tr key={item.id}>
-                  <td>
-                    <input 
-                      type="text" 
-                      placeholder="Descripción..." 
-                      style={{ border: 'none', width: '100%', background: 'transparent' }}
-                      value={item.descripcion}
-                      onChange={e => handleItemChange(item.id, 'descripcion', e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      style={{ textAlign: 'center', width: '100%', background: 'transparent', border: 'none' }}
-                      value={item.cantidad}
-                      onChange={e => handleItemChange(item.id, 'cantidad', e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      style={{ textAlign: 'right', width: '100%', background: 'transparent', border: 'none' }}
-                      value={item.precio}
-                      onChange={e => handleItemChange(item.id, 'precio', e.target.value)}
-                    />
-                  </td>
-                  <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                    ${Math.round((parseFloat(item.cantidad) || 0) * (parseFloat(item.precio) || 0)).toLocaleString('es-CL')}
-                  </td>
-                  <td className="no-print" style={{ textAlign: 'center' }}>
-                    <button type="button" className="btn-delete-cot" onClick={() => eliminarFila(item.id)}>✕</button>
-                  </td>
-                </tr>
-              ))}
+              {items.map(item => {
+                // Filtrar sugerencias del catálogo según lo que el usuario va escribiendo
+                const filtrados = catalogo.filter(p => 
+                  p.descripcion.toLowerCase().includes(item.descripcion.toLowerCase()) ||
+                  p.codigo.toLowerCase().includes(item.descripcion.toLowerCase())
+                );
+
+                return (
+                  <tr key={item.id}>
+                    <td>
+                      <input 
+                        type="text" 
+                        placeholder="Escribe para buscar un producto..." 
+                        style={{ border: 'none', width: '100%', background: 'transparent' }}
+                        value={item.descripcion}
+                        onChange={e => handleItemChange(item.id, 'descripcion', e.target.value)}
+                        onBlur={() => setTimeout(() => handleItemChange(item.id, 'mostrarSugerencias', false), 200)}
+                      />
+                      
+                      {/* Menú de sugerencias desplegable en vivo */}
+                      {item.mostrarSugerencias && filtrados.length > 0 && (
+                        <ul className="sugerencias-lista no-print">
+                          {filtrados.map((prod, idx) => (
+                            <li 
+                              key={idx} 
+                              className="sugerencia-item"
+                              onMouseDown={() => seleccionarProducto(item.id, prod)}
+                            >
+                              <strong>[{prod.codigo}]</strong> {prod.descripcion} - ${Math.round(prod.precio_neto).toLocaleString('es-CL')}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </td>
+                    <td>
+                      <input 
+                        type="number" 
+                        style={{ textAlign: 'center', width: '100%', background: 'transparent', border: 'none' }}
+                        value={item.cantidad}
+                        onChange={e => handleItemChange(item.id, 'cantidad', e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input 
+                        type="number" 
+                        style={{ textAlign: 'right', width: '100%', background: 'transparent', border: 'none' }}
+                        value={item.precio}
+                        onChange={e => handleItemChange(item.id, 'precio', e.target.value)}
+                      />
+                    </td>
+                    <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                      ${Math.round((parseFloat(item.cantidad) || 0) * (parseFloat(item.precio) || 0)).toLocaleString('es-CL')}
+                    </td>
+                    <td className="no-print" style={{ textAlign: 'center' }}>
+                      <button type="button" className="btn-delete-cot" onClick={() => eliminarFila(item.id)}>✕</button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
