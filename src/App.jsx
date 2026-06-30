@@ -5,11 +5,11 @@ import Cotizador from './Cotizador';
 import Inventario from './Inventario';
 import Agenda from './Agenda'; 
 import RutasTerreno from './RutasTerreno'; 
+import PreCartera from './PreCartera'; // Nueva Importación
 
 export default function App() {
   const [view, setView] = useState('inicio'); 
 
-  // Credenciales de login fijadas
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -68,6 +68,7 @@ export default function App() {
         <div className="buttons-container-epysur">
           <button onClick={() => setView('inicio')} className="nav-btn-epysur" style={{ color: view === 'inicio' ? '#fef08a' : 'white' }}>Inicio</button>
           <button onClick={() => setView('cartera')} className="nav-btn-epysur" style={{ color: view === 'cartera' ? '#fef08a' : 'white' }}>Cartera</button>
+          <button onClick={() => setView('precartera')} className="nav-btn-epysur" style={{ color: view === 'precartera' ? '#fef08a' : 'white' }}>Pre-Cartera</button>
           <button onClick={() => setView('creditos')} className="nav-btn-epysur" style={{ color: view === 'creditos' ? '#fef08a' : 'white' }}>Créditos</button>
           <button onClick={() => setView('cotizador')} className="nav-btn-epysur" style={{ color: view === 'cotizador' ? '#fef08a' : 'white' }}>Cotizador</button>
           <button onClick={() => setView('inventario')} className="nav-btn-epysur" style={{ color: view === 'inventario' ? '#fef08a' : 'white' }}>Inventario</button>
@@ -84,6 +85,7 @@ export default function App() {
         )}
 
         {view === 'cartera' && <Cartera />}
+        {view === 'precartera' && <PreCartera />}
         {view === 'creditos' && <Creditos />}
         {view === 'cotizador' && <Cotizador />}
         {view === 'inventario' && <Inventario />}
